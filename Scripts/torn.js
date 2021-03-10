@@ -59,6 +59,7 @@ class Widget extends Base {
    * 渲染中尺寸组件
    */
   async renderMedium (data, num = 3) {
+    const thisFont = Font.lightSystemFont(14)
     let w = new ListWidget()
     await this.renderHeader(w, null, 'TORN CITY')
     for (const key in data) {
@@ -68,12 +69,35 @@ class Widget extends Base {
       cell_box.size = new Size(3, 15)
       cell_box.backgroundColor = new Color('#ffff00', 0.6)
       cell.addSpacer(10)
-      const cell_text = cell.addText(`${key}: ${data[key]}`)
-      cell_text.font = Font.lightSystemFont(16)
+      let value = data[key]
+      if (typeof value === 'string') {
+        const cell_text = cell.addText(`${key}: ${value}`)
+        cell_text.font = thisFont
+      } else if (value instanceof Date) {
+        cell.addText(`${key}: @ `).font = thisFont
+        let dueDate = cell.addDate(value)
+        dueDate.font = thisFont
+        dueDate.applyTimeStyle()
+        cell.addText(` in `).font = thisFont
+        let timer = cell.addDate(value)
+        timer.font = thisFont
+        timer.applyTimerStyle()
+      } else {
+        console.warn('unknown data')
+      }
       // cell.url = this.actionUrl("open-url", d['url'])
       cell.addSpacer()
-      w.addSpacer(10)
+      w.addSpacer(8)
     }
+    // updateTime
+    let footer = w.addStack()
+    footer.addText('最近更新 ').font = thisFont
+    let updateDate = footer.addDate(new Date())
+    updateDate.font = thisFont
+    updateDate.applyRelativeStyle()
+    footer.addText(' 前').font = thisFont
+    footer.addSpacer()
+    //
     w.addSpacer()
     w.refreshAfterDate = new Date(Date.now() + 30 * 1000)
     return w
@@ -94,18 +118,22 @@ class Widget extends Base {
     let { timestamp, cooldowns, status, travel } = data
     function formatHM(number, n) {
       let string = String(number)
+      n = n || 2
       while (string.length < n) {
         string = '0' + string
       }
       return string
     }
-    function formatCooldown(timestamp, delta) {
+    function _formatCooldown(timestamp, delta) {
       let dueDate = new Date((timestamp + delta) * 1000)
       let dueHours = formatHM(dueDate.getHours())
       let dueMinutes = formatHM(dueDate.getMinutes())
       let deltaHours = formatHM(Math.floor(delta / 60 / 60) % 24)
       let deltaMinutes = formatHM(Math.floor(delta / 60) % 60)
       return `@ ${dueHours}:${dueMinutes} LT, in ${deltaHours}h ${deltaMinutes}m`
+    }
+    function formatCooldown(timestamp, delta) {
+      return new Date((timestamp + delta) * 1000)
     }
     let state
     if (status.state === 'Traveling') {
@@ -115,8 +143,10 @@ class Widget extends Base {
       let travelMinutes = formatHM(travelDate.getMinutes())
       state = `-> ${destination} @ ${travelHours}:${travelMinutes} LT`
       // setup notification
-      await Notification.removeAllPending()
+      const identifier = 'torn.travel'
+      await Notification.removePending([identifier])
       let n = new Notification()
+      n.identifier = identifier
       n.title = 'Torn Travel'
       n.body = `Arriving at ${destination}`
       n.setTriggerDate(travelDate)
@@ -124,12 +154,27 @@ class Widget extends Base {
     } else {
       state = 'Okay'
     }
-    return {
-      state,
-      drug: formatCooldown(timestamp, cooldowns.drug),
-      medical: formatCooldown(timestamp, cooldowns.medical),
-      booster: formatCooldown(timestamp, cooldowns.booster)
+    let result = { state }
+    const keys = ['drug', 'medical', 'booster']
+    for (const key of keys) {
+      let cooldownDate = formatCooldown(timestamp, cooldowns[key])
+      result[key] = cooldownDate
+      // setup notification
+      await scheduleNotification({
+        identifier: `torn.cooldowns.${key}`,
+        title: 'Torn Cooldowns',
+        body: `Here is your ${key} cooldown reminder!`
+      }, cooldownDate)
     }
+    async function scheduleNotification(options, triggerDate) {
+      const { identifier } = options
+      await Notification.removePending([identifier])
+      let n = new Notification()
+      n = Object.assign(n, options)
+      n.setTriggerDate(triggerDate)
+      await n.schedule()
+    }
+    return result
   }
 
   /**
