@@ -59,22 +59,37 @@ class Widget extends Base {
    * 渲染中尺寸组件
    */
   async renderMedium (data, num = 3) {
-    const thisFont = Font.lightSystemFont(14)
+    const isDarkMode = Device.isUsingDarkAppearance()
+    const fontSize = 14
+    const thisFont = Font.lightSystemFont(fontSize)
+    const textSpacerLenght = 8
     let w = new ListWidget()
-    await this.renderHeader(w, null, 'TORN CITY')
+    await this.renderHeader(w, 'https://www.torn.com/images/v2/svg_icons/sprites/user_status_icons_sprite.svg', 'TORN CITY')
     for (const key in data) {
       const cell = w.addStack()
       cell.centerAlignContent()
       const cell_box = cell.addStack()
       cell_box.size = new Size(3, 15)
-      cell_box.backgroundColor = new Color('#ffff00', 0.6)
+      cell_box.backgroundColor = new Color('#ff837a', 0.6)
       cell.addSpacer(10)
       let value = data[key]
       if (typeof value === 'string') {
+        // status
         const cell_text = cell.addText(`${key}: ${value}`)
         cell_text.font = thisFont
       } else if (value instanceof Date) {
-        cell.addText(`${key}: @ `).font = thisFont
+        // cooldowns
+        const sfNames = {
+          travel: 'airplane',
+          drug: 'pills.fill',
+          booster: 'bolt.fill.batteryblock.fill',
+          medical: 'cross.case.fill'
+        }
+        let symbol = SFSymbol.named(sfNames[key])
+        let wImage = cell.addImage(symbol.image)
+        wImage.imageSize = new Size(fontSize, fontSize)
+        wImage.tintColor = isDarkMode ? new Color('#ffffff', 1) : new Color('#000000', 1)
+        cell.addText(` @ `).font = thisFont
         let dueDate = cell.addDate(value)
         dueDate.font = thisFont
         dueDate.applyTimeStyle()
@@ -83,7 +98,26 @@ class Widget extends Base {
         timer.font = thisFont
         timer.applyTimerStyle()
       } else {
-        console.warn('unknown data')
+        // bars
+        const barColors = {
+          energy: '#00ff00',
+          nerve: '#ff0000'
+        }
+        let barData = data[key]
+        let percent = barData.current / barData.maximum
+        // bar
+        let energyBar = cell.addStack()
+        energyBar.addSpacer(0)
+        energyBar.size = new Size(100, 20)
+        energyBar.backgroundColor = new Color('#888888', 1)
+        let inner = energyBar.addStack()
+        inner.size = new Size(energyBar.size.width * percent, energyBar.size.height)
+        inner.backgroundColor = new Color(barColors[key], 1)
+        energyBar.addSpacer()
+        cell.addSpacer(textSpacerLenght)
+        // text
+        let text = `${barData.current}/${barData.maximum}`
+        cell.addText(text).font = thisFont
       }
       // cell.url = this.actionUrl("open-url", d['url'])
       cell.addSpacer()
@@ -91,11 +125,12 @@ class Widget extends Base {
     }
     // updateTime
     let footer = w.addStack()
-    footer.addText('最近更新 ').font = thisFont
+    footer.centerAlignContent()
+    footer.addText('距离上次更新').font = thisFont
+    footer.addSpacer(textSpacerLenght)
     let updateDate = footer.addDate(new Date())
     updateDate.font = thisFont
     updateDate.applyRelativeStyle()
-    footer.addText(' 前').font = thisFont
     footer.addSpacer()
     //
     w.addSpacer()
@@ -113,9 +148,12 @@ class Widget extends Base {
    * 获取数据函数，函数名可不固定
    */
   async getData (APIKey) {
-    const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns&key=${APIKey}`
+    const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars&key=${APIKey}`
     const data = await this.httpGet(api, true, false)
+    // timestamp,basic,travel,cooldowns
     let { timestamp, cooldowns, status, travel } = data
+    // bars
+    let { energy, nerve, happy, life, chain } = data
     function formatHM(number, n) {
       let string = String(number)
       n = n || 2
@@ -135,27 +173,21 @@ class Widget extends Base {
     function formatCooldown(timestamp, delta) {
       return new Date((timestamp + delta) * 1000)
     }
-    let state
+    let result = { status: status.state, energy, nerve }
+    // travel
     if (status.state === 'Traveling') {
       let { destination, timestamp } =  travel
       let travelDate = new Date(timestamp * 1000)
-      let travelHours = formatHM(travelDate.getHours())
-      let travelMinutes = formatHM(travelDate.getMinutes())
-      state = `-> ${destination} @ ${travelHours}:${travelMinutes} LT`
+      result.travel = travelDate
       // setup notification
-      const identifier = 'torn.travel'
-      await Notification.removePending([identifier])
-      let n = new Notification()
-      n.identifier = identifier
-      n.title = 'Torn Travel'
-      n.body = `Arriving at ${destination}`
-      n.setTriggerDate(travelDate)
-      await n.schedule()
-    } else {
-      state = 'Okay'
+      await scheduleNotification({
+        identifier: 'torn.travel',
+        title: 'Torn Travel',
+        body: `Arriving at ${destination}`
+      }, travelDate)
     }
-    let result = { state }
-    const keys = ['drug', 'medical', 'booster']
+    // cooldowns
+    const keys = ['drug', 'booster', 'medical']
     for (const key of keys) {
       let cooldownDate = formatCooldown(timestamp, cooldowns[key])
       result[key] = cooldownDate
