@@ -31,8 +31,34 @@ class Widget extends Base {
    * 可以根据 this.widgetFamily 来判断小组件尺寸，以返回不同大小的内容
    */
   async render () {
-    let APIKey = 'ISAKUPtu2FEBgN5d'
-    const data = await this.getData(APIKey)
+    let APIKey = args.widgetParameter
+    let data
+    if (APIKey !== null) {
+      data = await this.getData(APIKey)
+    } else {
+      data = {
+        state: 'Okay',
+        energy: {
+          current: 70,
+          maximum: 150,
+          increment: 5,
+          interval: 600,
+          ticktime: 22,
+          fulltime: 9022
+        },
+        nerve: {
+          current: 29,
+          maximum: 61,
+          increment: 1,
+          interval: 300,
+          ticktime: 22,
+          fulltime: 9322
+        },
+        drug: new Date(),
+        medical: new Date(),
+        booster: new Date()
+      }
+    }
     switch (this.widgetFamily) {
       case 'large':
         return await this.renderLarge(data)
@@ -64,7 +90,7 @@ class Widget extends Base {
     const thisFont = Font.lightSystemFont(fontSize)
     const textSpacerLenght = 8
     let w = new ListWidget()
-    await this.renderHeader(w, 'https://www.torn.com/images/v2/svg_icons/sprites/user_status_icons_sprite.svg', 'TORN CITY')
+    await this.renderHeader(w, null, 'TORN CITY')
     for (const key in data) {
       const cell = w.addStack()
       cell.centerAlignContent()
