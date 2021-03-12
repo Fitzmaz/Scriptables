@@ -15,6 +15,57 @@ if (typeof require === 'undefined') require = importModule
 const { Base } = require("./「小件件」开发环境")
 
 // @组件代码开始
+
+// constants
+const DataKeyTravel = 'travel'
+const DataKeyDrug = 'drug'
+const DataKeyBooster = 'booster'
+const DataKeyMedical = 'medical'
+const DataKeyEducation = 'education'
+const DataKeyBank = 'bank'
+const DataKeyOC = 'oc'
+const sfNames = {
+  [DataKeyTravel]: 'airplane',
+  [DataKeyDrug]: 'pills.fill',
+  [DataKeyBooster]: 'bolt.fill.batteryblock.fill',
+  [DataKeyMedical]: 'cross.case.fill'
+}
+
+// utils
+function formatHM(number, n) {
+  let string = String(number)
+  n = n || 2
+  while (string.length < n) {
+    string = '0' + string
+  }
+  return string
+}
+function _formatCooldown(timestamp, delta) {
+  let dueDate = new Date((timestamp + delta) * 1000)
+  let dueHours = formatHM(dueDate.getHours())
+  let dueMinutes = formatHM(dueDate.getMinutes())
+  let deltaHours = formatHM(Math.floor(delta / 60 / 60) % 24)
+  let deltaMinutes = formatHM(Math.floor(delta / 60) % 60)
+  return `@ ${dueHours}:${dueMinutes} LT, in ${deltaHours}h ${deltaMinutes}m`
+}
+function formatCooldown(timestamp, delta) {
+  return new Date((timestamp + delta) * 1000)
+}
+function formatTimeLeft(t) {
+  let days = Math.floor(t / 60 / 60 / 24)
+  let hours = Math.floor(t / 60 / 60) % 24
+  let minutes = Math.floor(t / 60) % 60
+  // 仅显示最大的非零的时间单位
+  const object = { days, hours, minutes }
+  for (const key in object) {
+    const n = object[key];
+    if (n > 0) {
+      return { unit: key, value: n }
+    }
+  }
+  return undefined
+}
+
 class Widget extends Base {
   /**
    * 传递给组件的参数，可以是桌面 Parameter 数据，也可以是外部如 URLScheme 等传递的数据
@@ -32,33 +83,21 @@ class Widget extends Base {
    */
   async render () {
     let APIKey = args.widgetParameter
-    let data
+    let result, factionCrimesResult
     if (APIKey !== null) {
-      data = await this.getData(APIKey)
+      const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education&key=${APIKey}`
+      result = await this.httpGet(api, true, false)
+      const factionCrimesApi = `https://api.torn.com/faction/?selections=crimes&key=${APIKey}`
+      factionCrimesResult = await this.httpGet(factionCrimesApi, true, false)
     } else {
-      data = {
-        state: 'Okay',
-        energy: {
-          current: 70,
-          maximum: 150,
-          increment: 5,
-          interval: 600,
-          ticktime: 22,
-          fulltime: 9022
-        },
-        nerve: {
-          current: 29,
-          maximum: 61,
-          increment: 1,
-          interval: 300,
-          ticktime: 22,
-          fulltime: 9322
-        },
-        drug: new Date(),
-        medical: new Date(),
-        booster: new Date()
-      }
+       result = {"timestamp":1615546237,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615546237,"points":11,"cayman_bank":0,"vault_amount":0,"daily_networth":5351854926,"money_onhand":4421187,"education_current":54,"education_timeleft":49825,"status":{"description":"Okay","details":"","state":"Okay","color":"green","until":0},"travel":{"destination":"Torn","timestamp":1615545084,"departed":1615538184,"time_left":0},"cooldowns":{"drug":12120,"medical":7592,"booster":11543},"happy":{"current":4977,"maximum":5025,"increment":5,"interval":900,"ticktime":563,"fulltime":8663},"life":{"current":1181,"maximum":1181,"increment":70,"interval":300,"ticktime":263,"fulltime":0},"energy":{"current":125,"maximum":150,"increment":5,"interval":600,"ticktime":563,"fulltime":2963},"nerve":{"current":52,"maximum":61,"increment":1,"interval":300,"ticktime":263,"fulltime":2663},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6825984},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,112,113,126,127]}
+       factionCrimesResult = {"crimes":{"8736509":{"crime_id":4,"crime_name":"Planned robbery","participants":[{"2587304":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2459216":{"description":"Returning to Torn from United Kingdom","details":"","state":"Traveling","color":"blue","until":0}},{"2601348":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2596088":{"description":"Returning to Torn from Argentina","details":"","state":"Traveling","color":"blue","until":0}},{"2515101":{"description":"Traveling to Argentina","details":"","state":"Traveling","color":"blue","until":0}}],"time_started":1615449927,"time_ready":1615795527,"time_left":248739,"time_completed":0,"initiated":0,"initiated_by":0,"planned_by":2515101,"success":0,"money_gain":0,"respect_gain":0}}}
     }
+    const data = await this.parseData(result)
+    const ocData = this.parseCrimes(factionCrimesResult, result.player_id)
+    console.log(result.player_id)
+    console.log(ocData)
+    Object.assign(data, ocData)
     switch (this.widgetFamily) {
       case 'large':
         return await this.renderLarge(data)
@@ -104,12 +143,6 @@ class Widget extends Base {
         cell_text.font = thisFont
       } else if (value instanceof Date) {
         // cooldowns
-        const sfNames = {
-          travel: 'airplane',
-          drug: 'pills.fill',
-          booster: 'bolt.fill.batteryblock.fill',
-          medical: 'cross.case.fill'
-        }
         let symbol = SFSymbol.named(sfNames[key])
         let wImage = cell.addImage(symbol.image)
         wImage.imageSize = new Size(fontSize, fontSize)
@@ -172,38 +205,19 @@ class Widget extends Base {
   /**
    * 获取数据函数，函数名可不固定
    */
-  async getData (APIKey) {
-    const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars&key=${APIKey}`
-    const data = await this.httpGet(api, true, false)
+   async parseData (data) {
     // timestamp,basic,travel,cooldowns
     let { timestamp, cooldowns, status, travel } = data
     // bars
     let { energy, nerve, happy, life, chain } = data
-    function formatHM(number, n) {
-      let string = String(number)
-      n = n || 2
-      while (string.length < n) {
-        string = '0' + string
-      }
-      return string
-    }
-    function _formatCooldown(timestamp, delta) {
-      let dueDate = new Date((timestamp + delta) * 1000)
-      let dueHours = formatHM(dueDate.getHours())
-      let dueMinutes = formatHM(dueDate.getMinutes())
-      let deltaHours = formatHM(Math.floor(delta / 60 / 60) % 24)
-      let deltaMinutes = formatHM(Math.floor(delta / 60) % 60)
-      return `@ ${dueHours}:${dueMinutes} LT, in ${deltaHours}h ${deltaMinutes}m`
-    }
-    function formatCooldown(timestamp, delta) {
-      return new Date((timestamp + delta) * 1000)
-    }
+    // bank,edu
+    let { city_bank, education_timeleft } = data
     let result = { status: status.state, energy, nerve }
     // travel
     if (status.state === 'Traveling') {
       let { destination, timestamp } =  travel
       let travelDate = new Date(timestamp * 1000)
-      result.travel = travelDate
+      result[DataKeyTravel] = travelDate
       // setup notification
       await scheduleNotification({
         identifier: 'torn.travel',
@@ -212,7 +226,7 @@ class Widget extends Base {
       }, new Date(travelDate.getTime() - 15 * 1000))
     }
     // cooldowns
-    const keys = ['drug', 'booster', 'medical']
+    const keys = [DataKeyDrug, DataKeyBooster, DataKeyMedical]
     for (const key of keys) {
       // API returns 0 if the cooldown is over
       if (cooldowns[key] === 0) continue
@@ -225,6 +239,24 @@ class Widget extends Base {
         body: `Here is your ${key} cooldown reminder!`
       }, cooldownDate)
     }
+    // bank
+    if (city_bank && typeof city_bank.time_left !== 'undefined') {
+      let timeLeft = formatTimeLeft(city_bank.time_left)
+      if (timeLeft) {
+        result[DataKeyBank] = `will expire in ${timeLeft.value} ${timeLeft.unit}`
+      } else {
+        result[DataKeyBank] = 'has expired'
+      }
+    }
+    // edu
+    if (typeof education_timeleft !== 'undefined') {
+      let timeLeft = formatTimeLeft(education_timeleft)
+      if (timeLeft) {
+        result[DataKeyEducation] = `will end in ${timeLeft.value} ${timeLeft.unit}`
+      } else {
+        result[DataKeyEducation] = 'has ended'
+      }
+    }
     async function scheduleNotification(options, triggerDate) {
       const { identifier } = options
       await Notification.removePending([identifier])
@@ -234,6 +266,26 @@ class Widget extends Base {
       await n.schedule()
     }
     return result
+  }
+  parseCrimes(data, playerId) {
+    let ocInfo = searchOC(data, playerId)
+    if (ocInfo) {
+      let { crime_name, time_left } = ocInfo
+      let timeLeft = formatTimeLeft(time_left)
+      return { oc: `will be ready in ${timeLeft.value} ${timeLeft.unit}` }
+    }
+    function searchOC(data, playerId) {
+      for (const key in data.crimes) {
+        const ocInfo = data.crimes[key]
+        let { participants, initiated } = ocInfo
+        if (initiated) continue
+        for (const man of participants) {
+          if (man[playerId]) {
+            return ocInfo
+          }
+        }
+      }
+    }
   }
 
   /**
