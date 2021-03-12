@@ -215,6 +215,8 @@ class Widget extends Base {
     // cooldowns
     const keys = ['drug', 'booster', 'medical']
     for (const key of keys) {
+      // API returns 0 if the cooldown is over
+      if (cooldowns[key] === 0) continue
       let cooldownDate = formatCooldown(timestamp, cooldowns[key])
       result[key] = cooldownDate
       // setup notification
