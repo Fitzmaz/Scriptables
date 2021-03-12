@@ -209,7 +209,7 @@ class Widget extends Base {
         identifier: 'torn.travel',
         title: 'Torn Travel',
         body: `Arriving at ${destination}`
-      }, travelDate)
+      }, new Date(travelDate.getTime() - 15 * 1000))
     }
     // cooldowns
     const keys = ['drug', 'booster', 'medical']
