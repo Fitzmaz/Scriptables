@@ -85,7 +85,6 @@ class Widget extends Base {
    * 渲染中尺寸组件
    */
   async renderMedium (data, num = 3) {
-    const isDarkMode = Device.isUsingDarkAppearance()
     const fontSize = 14
     const thisFont = Font.lightSystemFont(fontSize)
     const textSpacerLenght = 8
@@ -114,7 +113,7 @@ class Widget extends Base {
         let symbol = SFSymbol.named(sfNames[key])
         let wImage = cell.addImage(symbol.image)
         wImage.imageSize = new Size(fontSize, fontSize)
-        wImage.tintColor = isDarkMode ? new Color('#ffffff', 1) : new Color('#000000', 1)
+        wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
         cell.addText(` @ `).font = thisFont
         let dueDate = cell.addDate(value)
         dueDate.font = thisFont
