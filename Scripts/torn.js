@@ -17,12 +17,15 @@ const { Base } = require("./「小件件」开发环境")
 // @组件代码开始
 
 // constants
+const DataKeyStatus = 'status'
+const DataKeyEnergy = 'energy'
+const DataKeyNerve = 'nerve'
 const DataKeyTravel = 'travel'
 const DataKeyDrug = 'drug'
 const DataKeyBooster = 'booster'
 const DataKeyMedical = 'medical'
-const DataKeyEducation = 'education'
 const DataKeyBank = 'bank'
+const DataKeyEducation = 'education'
 const DataKeyOC = 'oc'
 const sfNames = {
   [DataKeyTravel]: 'airplane',
@@ -31,22 +34,23 @@ const sfNames = {
   [DataKeyMedical]: 'cross.case.fill'
 }
 
+// UX
+const fontSize = 14
+const thisFont = Font.lightSystemFont(fontSize)
+const textSpacerLenght = 8
+
 // utils
-function formatHM(number, n) {
+function addLeadingZeros(number, n = 2) {
   let string = String(number)
-  n = n || 2
   while (string.length < n) {
     string = '0' + string
   }
   return string
 }
-function _formatCooldown(timestamp, delta) {
-  let dueDate = new Date((timestamp + delta) * 1000)
-  let dueHours = formatHM(dueDate.getHours())
-  let dueMinutes = formatHM(dueDate.getMinutes())
-  let deltaHours = formatHM(Math.floor(delta / 60 / 60) % 24)
-  let deltaMinutes = formatHM(Math.floor(delta / 60) % 60)
-  return `@ ${dueHours}:${dueMinutes} LT, in ${deltaHours}h ${deltaMinutes}m`
+function formatHHMM(dueDate) {
+  let dueHours = addLeadingZeros(dueDate.getHours())
+  let dueMinutes = addLeadingZeros(dueDate.getMinutes())
+  return `${dueHours}:${dueMinutes}`
 }
 function formatCooldown(timestamp, delta) {
   return new Date((timestamp + delta) * 1000)
@@ -90,7 +94,7 @@ class Widget extends Base {
       const factionCrimesApi = `https://api.torn.com/faction/?selections=crimes&key=${APIKey}`
       factionCrimesResult = await this.httpGet(factionCrimesApi, true, false)
     } else {
-       result = {"timestamp":1615546237,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615546237,"points":11,"cayman_bank":0,"vault_amount":0,"daily_networth":5351854926,"money_onhand":4421187,"education_current":54,"education_timeleft":49825,"status":{"description":"Okay","details":"","state":"Okay","color":"green","until":0},"travel":{"destination":"Torn","timestamp":1615545084,"departed":1615538184,"time_left":0},"cooldowns":{"drug":12120,"medical":7592,"booster":11543},"happy":{"current":4977,"maximum":5025,"increment":5,"interval":900,"ticktime":563,"fulltime":8663},"life":{"current":1181,"maximum":1181,"increment":70,"interval":300,"ticktime":263,"fulltime":0},"energy":{"current":125,"maximum":150,"increment":5,"interval":600,"ticktime":563,"fulltime":2963},"nerve":{"current":52,"maximum":61,"increment":1,"interval":300,"ticktime":263,"fulltime":2663},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6825984},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,112,113,126,127]}
+       result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127]}
        factionCrimesResult = {"crimes":{"8736509":{"crime_id":4,"crime_name":"Planned robbery","participants":[{"2587304":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2459216":{"description":"Returning to Torn from United Kingdom","details":"","state":"Traveling","color":"blue","until":0}},{"2601348":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2596088":{"description":"Returning to Torn from Argentina","details":"","state":"Traveling","color":"blue","until":0}},{"2515101":{"description":"Traveling to Argentina","details":"","state":"Traveling","color":"blue","until":0}}],"time_started":1615449927,"time_ready":1615795527,"time_left":248739,"time_completed":0,"initiated":0,"initiated_by":0,"planned_by":2515101,"success":0,"money_gain":0,"respect_gain":0}}}
     }
     const data = await this.parseData(result)
@@ -112,21 +116,131 @@ class Widget extends Base {
    * 渲染小尺寸组件
    */
   async renderSmall (data) {
+    // 以375x667 pt作为最低适配分辨率，此时widget为148x148 pt，四分布局最小间距8 pt，因此每个正方形边长为70 pt
+    const wMargin = 8
+    const edgeLength = 70
+    function addContainer(w) {
+      w.addSpacer()
+      const container = w.addStack()
+      container.size = new Size(0, edgeLength)
+      return container
+    }
+    function addSquare(container) {
+      container.addSpacer()
+      const square = container.addStack()
+      square.size = new Size(edgeLength, edgeLength)
+      return square
+    }
+    
     let w = new ListWidget()
-    await this.renderHeader(w, data['logo'], data['title'])
-    const t = w.addText(data['content'])
-    t.font = Font.lightSystemFont(16)
+    let topContainer = addContainer(w)
+    let leftSquare = addSquare(topContainer)
+    let rightSquare = addSquare(topContainer)
+    topContainer.addSpacer()
+    let bottomContainer = addContainer(w)
+    bottomContainer.addSpacer()
+    let bottomRect = bottomContainer.addStack()
+    bottomRect.size = new Size(edgeLength * 2 + wMargin, edgeLength)
+    bottomContainer.addSpacer()
     w.addSpacer()
-    w.url = this.actionUrl('open-url', data['url'])
+
+    // debug
+    // w.backgroundColor = Color.gray()
+    // leftSquare.backgroundColor = Color.red()
+    // rightSquare.backgroundColor = Color.green()
+    // bottomRect.backgroundColor = Color.blue()
+
+    // leftSquare
+    leftSquare.layoutVertically()
+    // centerAlignContent似乎仅针对水平布局的WidgetStack，垂直布局的WidgetStack无法让内容左右居中
+    // leftSquare.centerAlignContent()
+    function addTextToken(container, text, backgroundColor, left, right) {
+      container.addSpacer()
+      const cell = container.addStack()
+      cell.size = new Size(container.size.width, 0)
+      // cell.backgroundColor = Color.white()
+      cell.addSpacer(left)
+      const fontSize = 14
+      const tokenFont = Font.lightSystemFont(fontSize)
+      const tokenCornerRadius = 999
+      const leftRightPadding = fontSize / 2
+      let textToken = cell.addStack()
+      textToken.backgroundColor = backgroundColor
+      textToken.cornerRadius = tokenCornerRadius
+      textToken.addSpacer()
+      let tokenText = textToken.addText(text)
+      tokenText.lineLimit = 1
+      tokenText.font = tokenFont
+      textToken.addSpacer()
+      cell.addSpacer(right)
+    }
+    switch (data[DataKeyStatus]) {
+      case 'Aboard':
+        addTextToken(leftSquare, 'aboard', Color.blue(), 3, 0)
+        break;
+      case 'Traveling':
+        addTextToken(leftSquare, 'flying', Color.blue(), 3, 0)
+        break;
+      default:
+        addTextToken(leftSquare, 'okay', Color.green(), 3, 0)
+        break;
+    }
+    for (const key of [DataKeyEnergy, DataKeyNerve]) {
+      const barColors = {
+        energy: '#00ff00',
+        nerve: '#ff0000'
+      }
+      const barData = data[key]
+      let percent = barData.current / barData.maximum
+      addTextToken(leftSquare, `${barData.current}/${barData.maximum}`, new Color(barColors[key], 1), 3, 0)
+    }
+    leftSquare.addSpacer()
+
+    // rightSquare
+    rightSquare.layoutVertically()
+    for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC]) {
+      const names = {
+        [DataKeyBank]: '🏦',
+        [DataKeyEducation]: '🎓',
+        [DataKeyOC]: 'OC '
+      }
+      console.log(data)
+      const tokenBGColor = new Color('#ececec', 1)
+      let timeLeft = formatTimeLeft(data[key])
+      addTextToken(rightSquare, `${names[key]}${timeLeft.value}${timeLeft.unit[0]}`, tokenBGColor, 0, 4)
+    }
+    rightSquare.addSpacer()
+
+    // bottomRect放置各种cooldowns
+    bottomRect.layoutVertically()
+    const keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]
+    for (const key of keys) {
+      if (!data[key]) continue
+      const cell = bottomRect.addStack()
+      cell.centerAlignContent()
+      cell.addSpacer(4)
+      let value = data[key]
+      // cooldowns
+      const fontSize = 12
+      let symbol = SFSymbol.named(sfNames[key])
+      let wImage = cell.addImage(symbol.image)
+      wImage.imageSize = new Size(fontSize, fontSize)
+      wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+      let dateBox = cell.addStack()
+      dateBox.addText(` @ ${formatHHMM(value)}`).font = thisFont
+      let timerBox = cell.addStack()
+      timerBox.addText(` in `).font = thisFont
+      let timer = timerBox.addDate(value)
+      timer.font = thisFont
+      timer.applyTimerStyle()
+    }
+
     return w
   }
   /**
    * 渲染中尺寸组件
    */
   async renderMedium (data, num = 3) {
-    const fontSize = 14
-    const thisFont = Font.lightSystemFont(fontSize)
-    const textSpacerLenght = 8
     let w = new ListWidget()
     await this.renderHeader(w, null, 'TORN CITY')
     for (const key in data) {
@@ -155,6 +269,36 @@ class Widget extends Base {
         let timer = cell.addDate(value)
         timer.font = thisFont
         timer.applyTimerStyle()
+      } else if (typeof value === 'number') {
+        let timeLeft = formatTimeLeft(value)
+        let text
+        switch (key) {
+          case DataKeyBank:
+            if (timeLeft) {
+              text = `will expire in ${timeLeft.value} ${timeLeft.unit}`
+            } else {
+              text = 'has expired'
+            }
+            break;
+          case DataKeyEducation:
+            if (timeLeft) {
+              text = `will end in ${timeLeft.value} ${timeLeft.unit}`
+            } else {
+              text = 'has ended'
+            }
+            break;
+          case DataKeyOC:
+            if (timeLeft) {
+              text = `will be ready in ${timeLeft.value} ${timeLeft.unit}`
+            } else {
+              text = 'has been ready'
+            }
+            break;
+          default:
+            break;
+        }
+        const cell_text = cell.addText(`${key}: ${text}`)
+        cell_text.font = thisFont
       } else {
         // bars
         const barColors = {
@@ -212,7 +356,7 @@ class Widget extends Base {
     let { energy, nerve, happy, life, chain } = data
     // bank,edu
     let { city_bank, education_timeleft } = data
-    let result = { status: status.state, energy, nerve }
+    let result = { [DataKeyStatus]: status.state, [DataKeyEnergy]: energy, [DataKeyNerve]: nerve }
     // travel
     if (status.state === 'Traveling') {
       let { destination, timestamp } =  travel
@@ -241,21 +385,11 @@ class Widget extends Base {
     }
     // bank
     if (city_bank && typeof city_bank.time_left !== 'undefined') {
-      let timeLeft = formatTimeLeft(city_bank.time_left)
-      if (timeLeft) {
-        result[DataKeyBank] = `will expire in ${timeLeft.value} ${timeLeft.unit}`
-      } else {
-        result[DataKeyBank] = 'has expired'
-      }
+      result[DataKeyBank] = city_bank.time_left
     }
     // edu
     if (typeof education_timeleft !== 'undefined') {
-      let timeLeft = formatTimeLeft(education_timeleft)
-      if (timeLeft) {
-        result[DataKeyEducation] = `will end in ${timeLeft.value} ${timeLeft.unit}`
-      } else {
-        result[DataKeyEducation] = 'has ended'
-      }
+      result[DataKeyEducation] = education_timeleft
     }
     async function scheduleNotification(options, triggerDate) {
       const { identifier } = options
@@ -271,8 +405,7 @@ class Widget extends Base {
     let ocInfo = searchOC(data, playerId)
     if (ocInfo) {
       let { crime_name, time_left } = ocInfo
-      let timeLeft = formatTimeLeft(time_left)
-      return { oc: `will be ready in ${timeLeft.value} ${timeLeft.unit}` }
+      return { [DataKeyOC]: time_left }
     }
     function searchOC(data, playerId) {
       for (const key in data.crimes) {
