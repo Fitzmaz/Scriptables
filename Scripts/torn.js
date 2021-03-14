@@ -162,9 +162,9 @@ class Widget extends Base {
       cell.addSpacer(left)
       const fontSize = 14
       const tokenFont = Font.lightSystemFont(fontSize)
-      const tokenCornerRadius = 999
-      const leftRightPadding = fontSize / 2
+      const tokenCornerRadius = 8
       let textToken = cell.addStack()
+      textToken.size = new Size(0, tokenCornerRadius * 2)
       textToken.backgroundColor = backgroundColor
       textToken.cornerRadius = tokenCornerRadius
       textToken.addSpacer()
@@ -175,8 +175,8 @@ class Widget extends Base {
       cell.addSpacer(right)
     }
     switch (data[DataKeyStatus]) {
-      case 'Aboard':
-        addTextToken(leftSquare, 'aboard', Color.blue(), 3, 0)
+      case 'Abroard':
+        addTextToken(leftSquare, 'abroard', Color.blue(), 3, 0)
         break;
       case 'Traveling':
         addTextToken(leftSquare, 'flying', Color.blue(), 3, 0)
