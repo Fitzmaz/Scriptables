@@ -241,10 +241,11 @@ class Widget extends Base {
   /**
    * 渲染中尺寸组件
    */
-  async renderMedium (data, num = 3) {
+  async renderMedium (data, keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]) {
     let w = new ListWidget()
     await this.renderHeader(w, null, 'TORN CITY')
-    for (const key in data) {
+    for (const key of keys) {
+      if (!data[key]) continue
       const cell = w.addStack()
       cell.centerAlignContent()
       const cell_box = cell.addStack()
@@ -344,7 +345,19 @@ class Widget extends Base {
    * 渲染大尺寸组件
    */
   async renderLarge (data) {
-    return await this.renderMedium(data, 10)
+    const keys = [
+      DataKeyStatus, 
+      DataKeyEnergy, 
+      DataKeyNerve, 
+      DataKeyTravel, 
+      DataKeyDrug, 
+      DataKeyBooster, 
+      DataKeyMedical,
+      DataKeyBank,
+      DataKeyEducation,
+      DataKeyOC
+    ]
+    return await this.renderMedium(data, keys)
   }
 
   /**
