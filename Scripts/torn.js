@@ -77,8 +77,11 @@ class Widget extends Base {
    */
   constructor (arg) {
     super(arg)
-    this.name = '示例小组件'
-    this.desc = '「小件件」—— 原创精美实用小组件'
+    this.name = 'TORN 小组件'
+    this.version = '0.0.2'
+    this.desc = `版本 ${this.version}`
+
+    this.registerAction('检查更新', this.actionUpdate)
   }
 
   /**
@@ -99,8 +102,6 @@ class Widget extends Base {
     }
     const data = await this.parseData(result)
     const ocData = this.parseCrimes(factionCrimesResult, result.player_id)
-    console.log(result.player_id)
-    console.log(ocData)
     Object.assign(data, ocData)
     switch (this.widgetFamily) {
       case 'large':
@@ -302,8 +303,8 @@ class Widget extends Base {
       } else {
         // bars
         const barColors = {
-          energy: '#00ff00',
-          nerve: '#ff0000'
+          energy: '#4d7c1e',
+          nerve: '#b3382c'
         }
         let barData = data[key]
         let percent = barData.current / barData.maximum
@@ -420,6 +421,40 @@ class Widget extends Base {
         }
       }
     }
+  }
+
+  async actionUpdate() {
+    let name = Script.name()
+    const fileName = `${name}.js`
+    if (name.endsWith('.dist')) {
+      name = name.substr(0, name.length - 5)
+    }
+    let manifestURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
+    const manifestReq = new Request(manifestURL)
+    console.log('开始检查更新')
+    const manifest = await manifestReq.loadJSON().catch((err) => { console.error(`检查更新发生错误: ${err}`) })
+    if (!manifest) return
+    if (manifest['version'] == this.version) {
+      console.log('当前版本已经是最新')
+      return
+    }
+    let alert = new Alert()
+    alert.message = `新版本 ${manifest.version} 是否更新`
+    alert.addAction('是')
+    alert.addAction('否')
+    let response = await alert.presentAlert()
+    if (response == 1) return
+    console.log('开始下载更新')
+    const REMOTE_REQ = new Request(`https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/${name}-${manifest.version}.js`)
+    const REMOTE_RES = await REMOTE_REQ.load().catch((err) => { console.error(`下载更新发生错误: ${err}`) })
+    if (!REMOTE_RES) return
+    if (REMOTE_REQ.response.statusCode !== 200) {
+      console.log('下载更新失败')
+      return
+    }
+    console.log('开始写入更新')
+    const FILE_MGR = FileManager[module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+    FILE_MGR.write(FILE_MGR.joinPath(FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
   }
 
   /**
