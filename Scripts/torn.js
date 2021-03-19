@@ -411,6 +411,7 @@ class Widget extends Base {
       const { identifier } = options
       await Notification.removePending([identifier])
       let n = new Notification()
+      n.openURL = 'alook://'
       n.sound = 'default'
       n = Object.assign(n, options)
       n.setTriggerDate(triggerDate)
