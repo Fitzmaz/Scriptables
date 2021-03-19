@@ -14,6 +14,8 @@
 if (typeof require === 'undefined') require = importModule
 const { Base } = require("./「小件件」开发环境")
 
+// @scriptable-loader
+
 // @组件代码开始
 
 // constants
@@ -466,7 +468,7 @@ class Widget extends Base {
       return
     }
     console.log('开始写入更新')
-    const FILE_MGR = FileManager[module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+    const FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
     FILE_MGR.write(FILE_MGR.joinPath(FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
   }
 
