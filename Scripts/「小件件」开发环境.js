@@ -31,7 +31,7 @@ class Base {
     this.SETTING_KEY = this.md5(Script.name())
     // 文件管理器
     // 提示：缓存数据不要用这个操作，这个是操作源码目录的，缓存建议存放在local temp目录中
-    this.FILE_MGR = FileManager[module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+    this.FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
     // 本地，用于存储图片等
     this.FILE_MGR_LOCAL = FileManager.local()
     this.BACKGROUND_KEY = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY}.jpg`)
@@ -779,7 +779,7 @@ const Testing = async (Widget, default_args = "") => {
           Keychain.set("xjj_debug_server", ip)
           const server_api = `http://${ip}:5566`
           // 2. 发送当前文件到远程服务器
-          const SELF_FILE = module.filename.replace('「小件件」开发环境', Script.name())
+          const SELF_FILE = global.module.filename.replace('「小件件」开发环境', Script.name())
           const req = new Request(`${server_api}/sync`)
           req.method = "POST"
           req.addFileToMultipart(SELF_FILE, "Widget", Script.name())
@@ -919,7 +919,7 @@ const Testing = async (Widget, default_args = "") => {
         },
         // 复制源码
         async () => {
-          const SELF_FILE = module.filename.replace('「小件件」开发环境', Script.name())
+          const SELF_FILE = global.module.filename.replace('「小件件」开发环境', Script.name())
           const source = FileManager.local().readString(SELF_FILE)
           Pasteboard.copyString(source)
           await M.notify("复制成功", "当前脚本的源代码已复制到剪贴板！")
@@ -977,7 +977,7 @@ module.exports = {
   const UPDATE_KEY = "XJJ_UPDATE_AT"
   let UPDATED_AT = 0
   const UPDATE_FILE = '「小件件」开发环境.js'
-  const FILE_MGR = FileManager[module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+  const FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
   if (Keychain.contains(UPDATE_KEY)) {
     UPDATED_AT = parseInt(Keychain.get(UPDATE_KEY))
   }
