@@ -513,18 +513,17 @@ class Widget extends Base {
 }
 // @组件代码结束
 
-const { Running, Testing } = require("./「小件件」开发环境")
-if (typeof DEBUG !== 'undefined' && DEBUG === true) {
-  await Testing(Widget)
-} else {
-  if (config.runsWithSiri) {
-    const M = new Widget(null)
-    const w = await M.render()
-    // widget偶现错误信息，原因不明，先给所有分支加上setWidget
-    // Call Script.setWidget() to set the content of the widget.
-    Script.setWidget(w)
-    Script.complete()
+; (async () => {
+  const { Running, Testing } = require("./「小件件」开发环境")
+  if (typeof DEBUG !== 'undefined' && DEBUG === true) {
+    await Testing(Widget)
   } else {
-    await Running(Widget)
+    if (config.runsWithSiri) {
+      const M = new Widget(null)
+      const w = await M.render()
+      Script.complete()
+    } else {
+      await Running(Widget)
+    }
   }
-}
+})()
