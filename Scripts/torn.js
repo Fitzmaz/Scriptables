@@ -49,6 +49,8 @@ const useSFSymbol = true
 const fontSize = 14
 const thisFont = Font.lightSystemFont(fontSize)
 const textSpacerLenght = 8
+const EnergyColor = '#4d7c1e'
+const NerveColor = '#b3382c'
 
 // utils
 function addLeadingZeros(number, n = 2) {
@@ -199,8 +201,8 @@ class Widget extends Base {
     }
     for (const key of [DataKeyEnergy, DataKeyNerve]) {
       const barColors = {
-        energy: '#00ff00',
-        nerve: '#ff0000'
+        energy: EnergyColor,
+        nerve: NerveColor
       }
       const barData = data[key]
       let percent = barData.current / barData.maximum
@@ -217,7 +219,7 @@ class Widget extends Base {
         [DataKeyOC]: 'OC '
       }
       console.log(data)
-      const tokenBGColor = new Color('#ececec', 1)
+      const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
       let timeLeft = formatTimeLeft(data[key])
       addTextToken(rightSquare, `${names[key]}${timeLeft.value}${timeLeft.unit[0]}`, tokenBGColor, 0, 4)
     }
@@ -323,8 +325,8 @@ class Widget extends Base {
       } else {
         // bars
         const barColors = {
-          energy: '#4d7c1e',
-          nerve: '#b3382c'
+          energy: EnergyColor,
+          nerve: NerveColor
         }
         let barData = data[key]
         let percent = barData.current / barData.maximum
