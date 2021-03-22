@@ -20,6 +20,7 @@ const DEBUG = true
 // @组件代码开始
 
 // constants
+const DataKeyTimestamp = 'timestamp'
 const DataKeyStatus = 'status'
 const DataKeyEnergy = 'energy'
 const DataKeyNerve = 'nerve'
@@ -331,13 +332,23 @@ class Widget extends Base {
       w.addSpacer(8)
     }
     // updateTime
+    const footerData = {
+      ['Data@']: new Date(data[DataKeyTimestamp] * 1000),
+      ['Widget@']: new Date()
+    }
     let footer = w.addStack()
     footer.centerAlignContent()
-    footer.addText('距离上次更新').font = thisFont
-    footer.addSpacer(textSpacerLenght)
-    let updateDate = footer.addDate(new Date())
-    updateDate.font = thisFont
-    updateDate.applyRelativeStyle()
+    let symbol = SFSymbol.named('arrow.clockwise')
+    let refresh = footer.addImage(symbol.image)
+    refresh.imageSize = new Size(fontSize, fontSize)
+    refresh.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+    for (const key in footerData) {
+      footer.addSpacer(textSpacerLenght)
+      footer.addText(key).font = thisFont
+      let updateDate = footer.addDate(footerData[key])
+      updateDate.font = thisFont
+      updateDate.applyRelativeStyle()
+    }
     footer.addSpacer()
     //
     w.addSpacer()
@@ -373,7 +384,7 @@ class Widget extends Base {
     let { energy, nerve, happy, life, chain } = data
     // bank,edu
     let { city_bank, education_timeleft } = data
-    let result = { [DataKeyStatus]: status.state, [DataKeyEnergy]: energy, [DataKeyNerve]: nerve }
+    let result = { [DataKeyTimestamp]: timestamp, [DataKeyStatus]: status.state, [DataKeyEnergy]: energy, [DataKeyNerve]: nerve }
     // travel
     if (status.state === 'Traveling') {
       let { destination, timestamp } =  travel
