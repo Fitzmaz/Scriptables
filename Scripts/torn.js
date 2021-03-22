@@ -191,7 +191,7 @@ class Widget extends Base {
         addTextToken(leftSquare, 'abroard', Color.blue(), 3, 0)
         break;
       case 'Traveling':
-        addTextToken(leftSquare, 'flying', Color.blue(), 3, 0)
+        addTextToken(leftSquare, 'flying', Color.purple(), 3, 0)
         break;
       default:
         addTextToken(leftSquare, 'okay', Color.green(), 3, 0)
