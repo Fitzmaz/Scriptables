@@ -517,7 +517,10 @@ if (typeof DEBUG !== 'undefined' && DEBUG === true) {
 } else {
   if (config.runsWithSiri) {
     const M = new Widget(null)
-    await M.render()
+    const w = await M.render()
+    // widget偶现错误信息，原因不明，先给所有分支加上setWidget
+    // Call Script.setWidget() to set the content of the widget.
+    Script.setWidget(w)
     Script.complete()
   } else {
     await Running(Widget)
