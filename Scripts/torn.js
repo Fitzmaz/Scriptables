@@ -34,9 +34,16 @@ const DataKeyOC = 'oc'
 const sfNames = {
   [DataKeyTravel]: 'airplane',
   [DataKeyDrug]: 'pills.fill',
-  [DataKeyBooster]: 'bolt.fill.batteryblock.fill',
+  [DataKeyBooster]: 'shift.fill',
   [DataKeyMedical]: 'cross.case.fill'
 }
+const cooldownsChar = {
+  [DataKeyTravel]: '飞',
+  [DataKeyDrug]: '药',
+  [DataKeyBooster]: '酒',
+  [DataKeyMedical]: '医'
+}
+const useSFSymbol = true
 
 // UX
 const fontSize = 14
@@ -227,10 +234,14 @@ class Widget extends Base {
       let value = data[key]
       // cooldowns
       const fontSize = 12
-      let symbol = SFSymbol.named(sfNames[key])
-      let wImage = cell.addImage(symbol.image)
-      wImage.imageSize = new Size(fontSize, fontSize)
-      wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+      if (useSFSymbol) {
+        let symbol = SFSymbol.named(sfNames[key])
+        let wImage = cell.addImage(symbol.image)
+        wImage.imageSize = new Size(fontSize, fontSize)
+        wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+      } else {
+        cell.addText(cooldownsChar[key]).font = thisFont
+      }
       let dateBox = cell.addStack()
       dateBox.addText(` @ ${formatHHMM(value)}`).font = thisFont
       let timerBox = cell.addStack()
@@ -263,10 +274,14 @@ class Widget extends Base {
         cell_text.font = thisFont
       } else if (value instanceof Date) {
         // cooldowns
-        let symbol = SFSymbol.named(sfNames[key])
-        let wImage = cell.addImage(symbol.image)
-        wImage.imageSize = new Size(fontSize, fontSize)
-        wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+        if (useSFSymbol) {
+          let symbol = SFSymbol.named(sfNames[key])
+          let wImage = cell.addImage(symbol.image)
+          wImage.imageSize = new Size(fontSize, fontSize)
+          wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+        } else {
+          cell.addText(cooldownsChar[key]).font = thisFont
+        }
         cell.addText(` @ `).font = thisFont
         let dueDate = cell.addDate(value)
         dueDate.font = thisFont
