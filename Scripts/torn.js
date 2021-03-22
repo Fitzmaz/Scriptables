@@ -48,7 +48,7 @@ const useSFSymbol = true
 // UX
 const fontSize = 14
 const thisFont = Font.lightSystemFont(fontSize)
-const textSpacerLenght = 8
+const textSpacerLenght = 4
 const EnergyColor = '#4d7c1e'
 const NerveColor = '#b3382c'
 
