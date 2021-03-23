@@ -704,7 +704,7 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
 const Running = async (Widget, default_args = "") => {
   let M = null
   // 判断hash是否和当前设备匹配
-  if (config.runsInWidget) {
+  if (config.runsInWidget || config.runsWithSiri) {
     M = new Widget(args.widgetParameter || '')
     const W = await M.render()
     Script.setWidget(W)
