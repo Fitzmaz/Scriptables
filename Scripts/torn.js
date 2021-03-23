@@ -13,9 +13,6 @@
 // 添加require，是为了vscode中可以正确引入包，以获得自动补全等功能
 if (typeof require === 'undefined') require = importModule
 const { Base } = require("./「小件件」开发环境")
-const DEBUG = true
-
-// @scriptable-loader
 
 // @组件代码开始
 
@@ -513,17 +510,5 @@ class Widget extends Base {
 }
 // @组件代码结束
 
-; (async () => {
-  const { Running, Testing } = require("./「小件件」开发环境")
-  if (typeof DEBUG !== 'undefined' && DEBUG === true) {
-    await Testing(Widget)
-  } else {
-    if (config.runsWithSiri) {
-      const M = new Widget(null)
-      const w = await M.render()
-      Script.complete()
-    } else {
-      await Running(Widget)
-    }
-  }
-})()
+const { Testing } = require("./「小件件」开发环境")
+await Testing(Widget)
