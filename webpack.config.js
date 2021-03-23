@@ -1,4 +1,5 @@
 const path = require('path');
+const ScriptablePlugin = require('./webpack/scriptable-plugin')
 
 module.exports = env => {
   let isDevelopment = env && env.development;
@@ -11,10 +12,15 @@ module.exports = env => {
       torn: './Scripts/torn.js'
     },
     plugins: [
+      new ScriptablePlugin()
     ],
     output: {
       filename: '[name]/[name].js',
       path: path.resolve(__dirname, 'Dist'),
+      library: {
+        name: 'Scriptable',
+        type: 'var',
+      }
     },
     module: {
       rules: [
