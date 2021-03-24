@@ -705,7 +705,8 @@ const Running = async (Widget, default_args = "") => {
   let M = null
   // 判断hash是否和当前设备匹配
   if (config.runsInWidget || config.runsWithSiri) {
-    M = new Widget(args.widgetParameter || '')
+    const arg = config.runsInWidget ? args.widgetParameter : args.shortcutParameter
+    M = new Widget(arg || '')
     const W = await M.render()
     Script.setWidget(W)
     Script.complete()
