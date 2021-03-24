@@ -99,7 +99,7 @@ class Widget extends Base {
    * 可以根据 this.widgetFamily 来判断小组件尺寸，以返回不同大小的内容
    */
   async render () {
-    let APIKey = args.widgetParameter
+    let APIKey = this.arg
     let result, factionCrimesResult
     if (APIKey !== null) {
       const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education&key=${APIKey}&comment=TornWidget`
