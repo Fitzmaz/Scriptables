@@ -101,7 +101,7 @@ class Widget extends Base {
   async render () {
     let APIKey = this.arg
     let result, factionCrimesResult
-    if (APIKey !== null) {
+    if (typeof APIKey === 'string' && APIKey.length > 0) {
       const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education&key=${APIKey}&comment=TornWidget`
       result = await this.httpGet(api, true, false)
       const factionCrimesApi = `https://api.torn.com/faction/?selections=crimes&key=${APIKey}&comment=TornWidget`
@@ -210,12 +210,12 @@ class Widget extends Base {
     // rightSquare
     rightSquare.layoutVertically()
     for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC]) {
+      if (!data[key]) continue
       const names = {
         [DataKeyBank]: '🏦',
         [DataKeyEducation]: '🎓',
         [DataKeyOC]: 'OC '
       }
-      console.log(data)
       const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
       let timeLeft = formatTimeLeft(data[key])
       addTextToken(rightSquare, `${names[key]}${timeLeft.value}${timeLeft.unit[0]}`, tokenBGColor, 0, 4)
