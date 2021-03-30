@@ -186,8 +186,8 @@ class Widget extends Base {
       cell.addSpacer(right)
     }
     switch (data[DataKeyStatus]) {
-      case 'Abroard':
-        addTextToken(leftSquare, 'abroard', Color.blue(), 3, 0)
+      case 'Abroad':
+        addTextToken(leftSquare, 'abroad', Color.blue(), 3, 0)
         break;
       case 'Traveling':
         addTextToken(leftSquare, 'flying', Color.purple(), 3, 0)
