@@ -401,8 +401,8 @@ class Widget extends Base {
     let result = { [DataKeyTimestamp]: timestamp, [DataKeyStatus]: status.state, [DataKeyEnergy]: energy, [DataKeyNerve]: nerve }
     // travel
     if (status.state === 'Traveling') {
-      let { destination, timestamp } =  travel
-      let travelDate = new Date(timestamp * 1000)
+      let { destination, time_left } =  travel
+      let travelDate = formatCooldown(timestamp, time_left)
       result[DataKeyTravel] = travelDate
       // setup notification
       await scheduleNotification({
