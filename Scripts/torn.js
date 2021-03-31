@@ -166,12 +166,12 @@ class Widget extends Base {
     leftSquare.layoutVertically()
     // centerAlignContent似乎仅针对水平布局的WidgetStack，垂直布局的WidgetStack无法让内容左右居中
     // leftSquare.centerAlignContent()
-    function addTextToken(container, text, backgroundColor, left, right) {
+    function addTextToken(container, { text, textColor, backgroundColor, paddingLeft, paddingRight }) {
       container.addSpacer()
       const cell = container.addStack()
       cell.size = new Size(container.size.width, 0)
       // cell.backgroundColor = Color.white()
-      cell.addSpacer(left)
+      cell.addSpacer(paddingLeft)
       const fontSize = 14
       const tokenFont = Font.lightSystemFont(fontSize)
       const tokenCornerRadius = 8
@@ -181,20 +181,32 @@ class Widget extends Base {
       textToken.cornerRadius = tokenCornerRadius
       textToken.addSpacer()
       let tokenText = textToken.addText(text)
+      if (textColor) {
+        tokenText.textColor = textColor
+      }
       tokenText.lineLimit = 1
       tokenText.font = tokenFont
       textToken.addSpacer()
-      cell.addSpacer(right)
+      cell.addSpacer(paddingRight)
+    }
+    function leftTokenOptions(text, backgroundColor) {
+      return  { 
+        text, 
+        textColor: new Color('#ececec', 1), 
+        backgroundColor, 
+        paddingLeft: 3, 
+        paddingRight: 0
+      }
     }
     switch (data[DataKeyStatus]) {
       case 'Abroad':
-        addTextToken(leftSquare, 'abroad', Color.blue(), 3, 0)
+        addTextToken(leftSquare, leftTokenOptions('abroad', Color.blue()))
         break;
       case 'Traveling':
-        addTextToken(leftSquare, 'flying', Color.purple(), 3, 0)
+        addTextToken(leftSquare, leftTokenOptions('flying', Color.purple()))
         break;
       default:
-        addTextToken(leftSquare, 'okay', Color.green(), 3, 0)
+        addTextToken(leftSquare, leftTokenOptions('okay', Color.green()))
         break;
     }
     for (const key of [DataKeyEnergy, DataKeyNerve]) {
@@ -204,7 +216,7 @@ class Widget extends Base {
       }
       const barData = data[key]
       let percent = barData.current / barData.maximum
-      addTextToken(leftSquare, `${barData.current}/${barData.maximum}`, new Color(barColors[key], 1), 3, 0)
+      addTextToken(leftSquare, leftTokenOptions(`${barData.current}/${barData.maximum}`, new Color(barColors[key], 1)))
     }
     leftSquare.addSpacer()
 
@@ -219,7 +231,13 @@ class Widget extends Base {
       }
       const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
       let timeLeft = formatTimeLeft(data[key])
-      addTextToken(rightSquare, `${names[key]}${timeLeft.value}${timeLeft.unit[0]}`, tokenBGColor, 0, 4)
+      addTextToken(rightSquare, {
+        text: `${names[key]}${timeLeft.value}${timeLeft.unit[0]}`,
+        textColor: null,
+        backgroundColor: tokenBGColor,
+        paddingLeft: 0,
+        paddingRight: 4
+      })
     }
     rightSquare.addSpacer()
 
