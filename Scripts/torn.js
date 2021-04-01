@@ -44,7 +44,7 @@ const useSFSymbol = true
 
 // UX
 const fontSize = 14
-const thisFont = Font.lightSystemFont(fontSize)
+const thisFont = Font.regularSystemFont(fontSize)
 const textSpacerLenght = 4
 const EnergyColor = '#4d7c1e'
 const NerveColor = '#b3382c'
@@ -173,7 +173,7 @@ class Widget extends Base {
       // cell.backgroundColor = Color.white()
       cell.addSpacer(paddingLeft)
       const fontSize = 14
-      const tokenFont = Font.lightSystemFont(fontSize)
+      const tokenFont = Font.semiboldSystemFont(fontSize)
       const tokenCornerRadius = 8
       let textToken = cell.addStack()
       textToken.size = new Size(0, tokenCornerRadius * 2)
@@ -251,7 +251,7 @@ class Widget extends Base {
       cell.addSpacer(4)
       let value = data[key]
       // cooldowns
-      const fontSize = 12
+      const fontSize = 10
       if (useSFSymbol) {
         let symbol = SFSymbol.named(sfNames[key])
         let wImage = cell.addImage(symbol.image)
