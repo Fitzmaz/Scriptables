@@ -28,6 +28,7 @@ const DataKeyMedical = 'medical'
 const DataKeyBank = 'bank'
 const DataKeyEducation = 'education'
 const DataKeyOC = 'oc'
+const DataKeyRefills = 'refills'
 const sfNames = {
   [DataKeyTravel]: 'airplane',
   [DataKeyDrug]: 'pills.fill',
@@ -102,12 +103,12 @@ class Widget extends Base {
     let APIKey = this.arg
     let result, factionCrimesResult
     if (typeof APIKey === 'string' && APIKey.length > 0) {
-      const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education&key=${APIKey}&comment=TornWidget`
+      const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education,refills&key=${APIKey}&comment=TornWidget`
       result = await this.httpGet(api, true, false)
       const factionCrimesApi = `https://api.torn.com/faction/?selections=crimes&key=${APIKey}&comment=TornWidget`
       factionCrimesResult = await this.httpGet(factionCrimesApi, true, false)
     } else {
-       result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127]}
+       result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127],"refills":{"energy_refill_used":true,"nerve_refill_used":false,"token_refill_used":false,"special_refills_available":0}}
        factionCrimesResult = {"crimes":{"8736509":{"crime_id":4,"crime_name":"Planned robbery","participants":[{"2587304":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2459216":{"description":"Returning to Torn from United Kingdom","details":"","state":"Traveling","color":"blue","until":0}},{"2601348":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2596088":{"description":"Returning to Torn from Argentina","details":"","state":"Traveling","color":"blue","until":0}},{"2515101":{"description":"Traveling to Argentina","details":"","state":"Traveling","color":"blue","until":0}}],"time_started":1615449927,"time_ready":1615795527,"time_left":248739,"time_completed":0,"initiated":0,"initiated_by":0,"planned_by":2515101,"success":0,"money_gain":0,"respect_gain":0}}}
        result.timestamp = Math.floor(Date.now() / 1000)
     }
@@ -164,10 +165,10 @@ class Widget extends Base {
 
     // leftSquare
     leftSquare.layoutVertically()
+    leftSquare.addSpacer()
     // centerAlignContent似乎仅针对水平布局的WidgetStack，垂直布局的WidgetStack无法让内容左右居中
     // leftSquare.centerAlignContent()
     function addTextToken(container, { text, textColor, backgroundColor, paddingLeft, paddingRight }) {
-      container.addSpacer()
       const cell = container.addStack()
       cell.size = new Size(container.size.width, 0)
       // cell.backgroundColor = Color.white()
@@ -186,6 +187,7 @@ class Widget extends Base {
       }
       tokenText.lineLimit = 1
       tokenText.font = tokenFont
+      tokenText.minimumScaleFactor = 0.8
       textToken.addSpacer()
       cell.addSpacer(paddingRight)
     }
@@ -218,10 +220,12 @@ class Widget extends Base {
       let percent = barData.current / barData.maximum
       addTextToken(leftSquare, leftTokenOptions(`${barData.current}/${barData.maximum}`, new Color(barColors[key], 1)))
     }
+    addTextToken(leftSquare, leftTokenOptions(`refill:${data[DataKeyRefills]}`, new Color('#6cadde', 1)))
     leftSquare.addSpacer()
 
     // rightSquare
     rightSquare.layoutVertically()
+    rightSquare.addSpacer()
     for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC]) {
       if (!data[key]) continue
       const names = {
@@ -451,6 +455,15 @@ class Widget extends Base {
     // edu
     if (typeof education_timeleft !== 'undefined') {
       result[DataKeyEducation] = education_timeleft
+    }
+    // refills
+    let { refills } = data
+    if (refills && typeof refills.energy_refill_used !== 'undefined' && typeof refills.special_refills_available !== 'undefined') {
+      let r = Number(refills.special_refills_available)
+      if (!refills.energy_refill_used) {
+        r += 1
+      }
+      result[DataKeyRefills] = r
     }
     async function scheduleNotification(options, triggerDate) {
       const { identifier } = options
