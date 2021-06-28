@@ -29,6 +29,7 @@ const DataKeyBank = 'bank'
 const DataKeyEducation = 'education'
 const DataKeyOC = 'oc'
 const DataKeyRefills = 'refills'
+const DataKeyRacing = 'racing'
 const sfNames = {
   [DataKeyTravel]: 'airplane',
   [DataKeyDrug]: 'pills.fill',
@@ -41,6 +42,10 @@ const cooldownsChar = {
   [DataKeyBooster]: '酒',
   [DataKeyMedical]: '医'
 }
+const RacingStatusWaiting = 'RacingStatusWaiting'
+const RacingStatusRacing = 'RacingStatusRacing'
+const RacingStatusFinished = 'RacingStatusFinished'
+const RacingStatusNone = 'RacingStatusNone'
 const useSFSymbol = true
 
 // UX
@@ -229,9 +234,23 @@ class Widget extends Base {
         [DataKeyOC]: 'OC '
       }
       const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
-      let timeLeft = formatTimeLeft(data[key])
+      let timeLeftObject = formatTimeLeft(data[key])
+      let timeLeftString = timeLeftObject ? `${timeLeftObject.value}${timeLeftObject.unit[0]}` : `now`
       addTextToken(rightSquare, {
-        text: `${names[key]}${timeLeft.value}${timeLeft.unit[0]}`,
+        text: `${names[key]}${timeLeftString}`,
+        textColor: null,
+        backgroundColor: tokenBGColor,
+        paddingLeft: 0,
+        paddingRight: 4
+      })
+    }
+    if (data[DataKeyRacing]) {
+      const { status, timeLeft } = data[DataKeyRacing]
+      const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
+      let timeLeftObject = formatTimeLeft(timeLeft)
+      let timeLeftString = timeLeftObject ? `${timeLeftObject.value}${timeLeftObject.unit[0]}` : `now`
+      addTextToken(rightSquare, {
+        text: `🏁${timeLeftString}`,
         textColor: null,
         backgroundColor: tokenBGColor,
         paddingLeft: 0,
@@ -470,6 +489,17 @@ class Widget extends Base {
     } else {
       result[DataKeyOC] = 0
     }
+    if (icons.icon17) {
+      // Racing - Waiting for a race to start - 00:25:31
+      // Racing - Currently racing - 00:04:35
+      let status = icons.icon17.toLowerCase().indexOf('wait') ? RacingStatusWaiting : RacingStatusRacing
+      result[DataKeyRacing] = { status, timeLeft: parseIconHHMMSSTimeLeft(icons.icon17) }
+    } else if (icons.icon18) {
+      // Racing - You finished 4th in the Stone Park race. Your best lap was 01:15.73
+      result[DataKeyRacing] = { status: RacingStatusFinished, timeLeft: 0 }
+    } else {
+      result[DataKeyRacing] = { status: RacingStatusNone, timeLeft: 0 }
+    }
     function parseIconTimeLeft(iconString) {
       // 3 days, 15 hours, 49 minutes and 59 seconds
       let matches = iconString.match(/\d+ \w+/g)
@@ -493,6 +523,17 @@ class Widget extends Base {
           return acc
         }
       }, 0)
+    }
+    function parseIconHHMMSSTimeLeft(iconString) {
+      // 00:25:31
+      let matches = iconString.match(/\d{2}:\d{2}:\d{2}/g)
+      if (matches.length <= 0) {
+        return 0
+      }
+      let hhmmss = matches[0]
+      let components = hhmmss.split(':')
+      console.log(components)
+      return components[0] * 3600 + components[1] * 60 + Number(components[2])
     }
     async function scheduleNotification(options, triggerDate) {
       const { identifier } = options
