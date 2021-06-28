@@ -101,20 +101,15 @@ class Widget extends Base {
    */
   async render () {
     let APIKey = this.arg
-    let result, factionCrimesResult
+    let result
     if (typeof APIKey === 'string' && APIKey.length > 0) {
-      const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education,refills&key=${APIKey}&comment=TornWidget`
+      const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education,refills,icons&key=${APIKey}&comment=TornWidget`
       result = await this.httpGet(api, true, false)
-      const factionCrimesApi = `https://api.torn.com/faction/?selections=crimes&key=${APIKey}&comment=TornWidget`
-      factionCrimesResult = await this.httpGet(factionCrimesApi, true, false)
     } else {
-       result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127],"refills":{"energy_refill_used":true,"nerve_refill_used":false,"token_refill_used":false,"special_refills_available":0}}
-       factionCrimesResult = {"crimes":{"8736509":{"crime_id":4,"crime_name":"Planned robbery","participants":[{"2587304":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2459216":{"description":"Returning to Torn from United Kingdom","details":"","state":"Traveling","color":"blue","until":0}},{"2601348":{"description":"Okay","details":"","state":"Okay","color":"green","until":0}},{"2596088":{"description":"Returning to Torn from Argentina","details":"","state":"Traveling","color":"blue","until":0}},{"2515101":{"description":"Traveling to Argentina","details":"","state":"Traveling","color":"blue","until":0}}],"time_started":1615449927,"time_ready":1615795527,"time_left":248739,"time_completed":0,"initiated":0,"initiated_by":0,"planned_by":2515101,"success":0,"money_gain":0,"respect_gain":0}}}
-       result.timestamp = Math.floor(Date.now() / 1000)
+      result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127],"refills":{"energy_refill_used":true,"nerve_refill_used":false,"token_refill_used":false,"special_refills_available":0},"icons":{"icon6":"Male","icon4":"Subscriber - Donator status: 92 days - Subscriber until: 24/08/21","icon8":"Married - To Trefor","icon29":"Bank Investment - Current bank investment worth $3,639,000,000 - 60 days, 23 hours, 34 minutes and 39 seconds","icon27":"Company - Chandler of Lead Farmers (Candle Shop)","icon9":"Faction - Karajan of November Chopin","icon19":"Education - Currently completing the Bachelor of Psychological Sciences course - 26 days, 9 hours, 9 minutes and 58 seconds","icon38":"Stock Market - You own shares in the stock market","icon85":"Organized Crime - Planned Robbery - 3 days, 15 hours, 47 minutes and 0 seconds","icon39":"Booster Cooldown - 01:24:28 / 24:00:00","icon52":"Drug Cooldown - Under the influence of Xanax - 03:03:50 ","icon78":"Property Upkeep war - $21,755,000 is due in property upkeep","icon17":"Racing - Waiting for a race to start - 00:58:29"}}
+      result.timestamp = Math.floor(Date.now() / 1000)
     }
     const data = await this.parseData(result)
-    const ocData = this.parseCrimes(factionCrimesResult, result.player_id)
-    Object.assign(data, ocData)
     switch (this.widgetFamily) {
       case 'large':
         return await this.renderLarge(data)
@@ -465,6 +460,40 @@ class Widget extends Base {
       }
       result[DataKeyRefills] = r
     }
+    // icons
+    let { icons } = data
+    if (icons.icon85) {
+      // Organized Crime - Planned Robbery - 3 days, 15 hours, 49 minutes and 59 seconds
+      console.log(icons.icon85)
+      result[DataKeyOC] = parseIconTimeLeft(icons.icon85)
+      console.log(result[DataKeyOC])
+    } else {
+      result[DataKeyOC] = 0
+    }
+    function parseIconTimeLeft(iconString) {
+      // 3 days, 15 hours, 49 minutes and 59 seconds
+      let matches = iconString.match(/\d+ \w+/g)
+      if (matches.length <= 0) {
+        return 0
+      }
+      return matches.reduce((acc, val) => {
+        console.log(`acc${acc}`)
+        let components = val.split(' ')
+        let time = Number(components[0])
+        let unit = components[1]
+        if (unit === 'days') {
+          return acc + time * 60 * 60 * 24
+        } else if (unit === 'hours') {
+          return acc + time * 60 * 60
+        } else if (unit === 'minutes') {
+          return acc + time * 60
+        } else if (unit === 'seconds') {
+          return acc + time
+        } else {
+          return acc
+        }
+      }, 0)
+    }
     async function scheduleNotification(options, triggerDate) {
       const { identifier } = options
       await Notification.removePending([identifier])
@@ -476,25 +505,6 @@ class Widget extends Base {
       await n.schedule()
     }
     return result
-  }
-  parseCrimes(data, playerId) {
-    let ocInfo = searchOC(data, playerId)
-    if (ocInfo) {
-      let { crime_name, time_left } = ocInfo
-      return { [DataKeyOC]: time_left }
-    }
-    function searchOC(data, playerId) {
-      for (const key in data.crimes) {
-        const ocInfo = data.crimes[key]
-        let { participants, initiated } = ocInfo
-        if (initiated) continue
-        for (const man of participants) {
-          if (man[playerId]) {
-            return ocInfo
-          }
-        }
-      }
-    }
   }
 
   async actionUpdate() {
