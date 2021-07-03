@@ -8,9 +8,14 @@
 // https://github.com/im3x/Scriptables
 // 
 
-// 组件基础类
 const RUNTIME_VERSION = 20201209
+console.log(`Runtime Version: ${RUNTIME_VERSION}`)
+const getGlobalModule = (m) => {
+  return typeof global !== 'undefined' ? global.module : m
+}
 
+// 组件基础类
+// @base.start
 class Base {
   constructor (arg="") {
     this.arg = arg
@@ -31,7 +36,7 @@ class Base {
     this.SETTING_KEY = this.md5(Script.name())
     // 文件管理器
     // 提示：缓存数据不要用这个操作，这个是操作源码目录的，缓存建议存放在local temp目录中
-    this.FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+    this.FILE_MGR = FileManager[getGlobalModule(module).filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
     // 本地，用于存储图片等
     this.FILE_MGR_LOCAL = FileManager.local()
     this.BACKGROUND_KEY = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY}.jpg`)
@@ -699,6 +704,7 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
   
 }
 // @base.end
+
 // 运行环境
 // @running.start
 const Running = async (Widget, default_args = "") => {
@@ -744,6 +750,7 @@ const Running = async (Widget, default_args = "") => {
 // @running.end
 
 // 测试环境
+// @testing.start
 const Testing = async (Widget, default_args = "") => {
   let M = null
   // 判断hash是否和当前设备匹配
@@ -780,7 +787,7 @@ const Testing = async (Widget, default_args = "") => {
           Keychain.set("xjj_debug_server", ip)
           const server_api = `http://${ip}:5566`
           // 2. 发送当前文件到远程服务器
-          const SELF_FILE = global.module.filename.replace('「小件件」开发环境', Script.name())
+          const SELF_FILE = getGlobalModule(module).filename.replace('「小件件」开发环境', Script.name())
           const req = new Request(`${server_api}/sync`)
           req.method = "POST"
           req.addFileToMultipart(SELF_FILE, "Widget", Script.name())
@@ -920,7 +927,7 @@ const Testing = async (Widget, default_args = "") => {
         },
         // 复制源码
         async () => {
-          const SELF_FILE = global.module.filename.replace('「小件件」开发环境', Script.name())
+          const SELF_FILE = getGlobalModule(module).filename.replace('「小件件」开发环境', Script.name())
           const source = FileManager.local().readString(SELF_FILE)
           Pasteboard.copyString(source)
           await M.notify("复制成功", "当前脚本的源代码已复制到剪贴板！")
@@ -960,42 +967,10 @@ const Testing = async (Widget, default_args = "") => {
     }
   }
 }
+// @testing.end
 
 module.exports = {
   Base,
   Testing,
   Running,
 }
-
-// 自更新
-// 流程：
-// 1. 获取远程gitee仓库的本文件代码
-// 2. 对比sha，如果和本地存储的不一致，则下载
-// 3. 下载保存，存储sha
-// 4. 更新时间为每小时一次
-// 
-;(async () => {
-  const UPDATE_KEY = "XJJ_UPDATE_AT"
-  let UPDATED_AT = 0
-  const UPDATE_FILE = '「小件件」开发环境.js'
-  const FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
-  if (Keychain.contains(UPDATE_KEY)) {
-    UPDATED_AT = parseInt(Keychain.get(UPDATE_KEY))
-  }
-  if (UPDATED_AT > (+new Date - 1000*60*60)) return console.warn('[-] 1 小时内已检查过更新')
-  console.log('[*] 检测开发环境是否有更新..')
-  const req = new Request('https://gitee.com/im3x/Scriptables/raw/v2-dev/package.json')
-  const res = await req.loadJSON()
-  console.log(`[+] 远程开发环境版本：${res['runtime_ver']}`)
-  if (res['runtime_ver'] === RUNTIME_VERSION) return console.warn('[-] 远程版本一致，暂无更新')
-  console.log('[+] 开始更新开发环境..')
-  const REMOTE_REQ = new Request('https://gitee.com/im3x/Scriptables/raw/v2-dev/Scripts/%E3%80%8C%E5%B0%8F%E4%BB%B6%E4%BB%B6%E3%80%8D%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83.js')
-  const REMOTE_RES = await REMOTE_REQ.load()
-  FILE_MGR.write(FILE_MGR.joinPath(FILE_MGR.documentsDirectory(), UPDATE_FILE), REMOTE_RES);
-  const n = new Notification()
-  n.title = "更新成功"
-  n.body = "「小件件」开发环境已自动更新！"
-  n.schedule()
-  UPDATED_AT = +new Date
-  Keychain.set(UPDATE_KEY, String(UPDATED_AT))
-})()
