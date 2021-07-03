@@ -91,7 +91,7 @@ class Widget extends Base {
    * 传递给组件的参数，可以是桌面 Parameter 数据，也可以是外部如 URLScheme 等传递的数据
    * @param {string} arg 自定义参数
    */
-  constructor (arg) {
+  constructor(arg) {
     super(arg)
     this.name = 'TORN 小组件'
     this.version = '0.1.1'
@@ -104,7 +104,7 @@ class Widget extends Base {
    * 渲染函数，函数名固定
    * 可以根据 this.widgetFamily 来判断小组件尺寸，以返回不同大小的内容
    */
-  async render () {
+  async render() {
     let APIKey = this.arg
     let result
     if (typeof APIKey === 'string' && APIKey.length > 0) {
@@ -128,7 +128,7 @@ class Widget extends Base {
   /**
    * 渲染小尺寸组件
    */
-  async renderSmall (data) {
+  async renderSmall(data) {
     // 以375x667 pt作为最低适配分辨率，此时widget为148x148 pt，四分布局最小间距8 pt，因此每个正方形边长为70 pt
     const wMargin = 8
     const edgeLength = 70
@@ -144,7 +144,7 @@ class Widget extends Base {
       square.size = new Size(edgeLength, edgeLength)
       return square
     }
-    
+
     let w = new ListWidget()
     let topContainer = addContainer(w)
     let leftSquare = addSquare(topContainer)
@@ -192,11 +192,11 @@ class Widget extends Base {
       cell.addSpacer(paddingRight)
     }
     function leftTokenOptions(text, backgroundColor) {
-      return  { 
-        text, 
-        textColor: new Color('#ececec', 1), 
-        backgroundColor, 
-        paddingLeft: 3, 
+      return {
+        text,
+        textColor: new Color('#ececec', 1),
+        backgroundColor,
+        paddingLeft: 3,
         paddingRight: 0
       }
     }
@@ -297,7 +297,7 @@ class Widget extends Base {
   /**
    * 渲染中尺寸组件
    */
-  async renderMedium (data, keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]) {
+  async renderMedium(data, keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]) {
     let w = new ListWidget()
     await this.renderHeader(w, null, 'TORN CITY')
     for (const key of keys) {
@@ -414,14 +414,14 @@ class Widget extends Base {
   /**
    * 渲染大尺寸组件
    */
-  async renderLarge (data) {
+  async renderLarge(data) {
     const keys = [
-      DataKeyStatus, 
-      DataKeyEnergy, 
-      DataKeyNerve, 
-      DataKeyTravel, 
-      DataKeyDrug, 
-      DataKeyBooster, 
+      DataKeyStatus,
+      DataKeyEnergy,
+      DataKeyNerve,
+      DataKeyTravel,
+      DataKeyDrug,
+      DataKeyBooster,
       DataKeyMedical,
       DataKeyBank,
       DataKeyEducation,
@@ -433,7 +433,7 @@ class Widget extends Base {
   /**
    * 获取数据函数，函数名可不固定
    */
-   async parseData (data) {
+  async parseData(data) {
     // timestamp,basic,travel,cooldowns
     let { timestamp, cooldowns, status, travel } = data
     // bars
@@ -443,7 +443,7 @@ class Widget extends Base {
     let result = { [DataKeyTimestamp]: timestamp, [DataKeyStatus]: status.state, [DataKeyEnergy]: energy, [DataKeyNerve]: nerve }
     // travel
     if (status.state === 'Traveling') {
-      let { destination, time_left } =  travel
+      let { destination, time_left } = travel
       let travelDate = formatCooldown(timestamp, time_left)
       result[DataKeyTravel] = travelDate
       // setup notification
@@ -614,7 +614,7 @@ class Widget extends Base {
    * 自定义注册点击事件，用 actionUrl 生成一个触发链接，点击后会执行下方对应的 action
    * @param {string} url 打开的链接
    */
-  async actionOpenUrl (url) {
+  async actionOpenUrl(url) {
     Safari.openInApp(url, false)
   }
 
