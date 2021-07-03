@@ -12,7 +12,7 @@
 
 // 添加require，是为了vscode中可以正确引入包，以获得自动补全等功能
 if (typeof require === 'undefined') require = importModule
-const { Base } = require("./「小件件」开发环境")
+const { Base, Testing } = require("./「小件件」开发环境")
 
 // @组件代码开始
 
@@ -488,9 +488,7 @@ class Widget extends Base {
     let { icons } = data
     if (icons.icon85) {
       // Organized Crime - Planned Robbery - 3 days, 15 hours, 49 minutes and 59 seconds
-      console.log(icons.icon85)
       result[DataKeyOC] = parseIconTimeLeft(icons.icon85)
-      console.log(result[DataKeyOC])
     } else {
       result[DataKeyOC] = 0
     }
@@ -512,7 +510,6 @@ class Widget extends Base {
         return 0
       }
       return matches.reduce((acc, val) => {
-        console.log(`acc${acc}`)
         let components = val.split(' ')
         let time = Number(components[0])
         let unit = components[1]
@@ -537,7 +534,6 @@ class Widget extends Base {
       }
       let hhmmss = matches[0]
       let components = hhmmss.split(':')
-      console.log(components)
       return components[0] * 3600 + components[1] * 60 + Number(components[2])
     }
     async function scheduleNotification(options, triggerDate) {
@@ -572,7 +568,7 @@ class Widget extends Base {
     }
     const make = adapter => async (url, encoding) => {
       const request = adapter(encoding)
-      let response = await request(url).catch(err => console.error(`Request Failed Error:${err}`))
+      let response = await request(url).catch(err => console.warn(`Request Failed Error:${err}`))
       if (!response) {
         const fallbackUrl = `https://api.tornhub.xyz:8092/v1/file/get?url=${encodeURIComponent(url)}`
         console.log(`请求fallback: ${fallbackUrl}`)
@@ -621,5 +617,4 @@ class Widget extends Base {
 }
 // @组件代码结束
 
-const { Testing } = require("./「小件件」开发环境")
 await Testing(Widget)
