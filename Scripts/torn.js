@@ -269,21 +269,26 @@ class Widget extends Base {
       cell.addSpacer(4)
       let value = data[key]
       // cooldowns
-      const fontSize = 10
       if (useSFSymbol) {
         let symbol = SFSymbol.named(sfNames[key])
         let wImage = cell.addImage(symbol.image)
+        const fontSize = 10
         wImage.imageSize = new Size(fontSize, fontSize)
         wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
       } else {
         cell.addText(cooldownsChar[key]).font = thisFont
       }
       let dateBox = cell.addStack()
-      dateBox.addText(` @ ${formatHHMM(value)}`).font = thisFont
+      let dateBoxText = dateBox.addText(` @ ${formatHHMM(value)}`)
+      dateBoxText.font = thisFont
+      dateBoxText.lineLimit = 1
       let timerBox = cell.addStack()
-      timerBox.addText(` in `).font = thisFont
+      let timerBoxText = timerBox.addText(` in `)
+      timerBoxText.font = thisFont
+      timerBoxText.lineLimit = 1
       let timer = timerBox.addDate(value)
       timer.font = thisFont
+      timer.lineLimit = 1
       timer.applyTimerStyle()
     }
 
