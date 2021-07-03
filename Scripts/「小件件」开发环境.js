@@ -8,7 +8,7 @@
 // https://github.com/im3x/Scriptables
 // 
 
-const RUNTIME_VERSION = 20201209
+const RUNTIME_VERSION = 20210703
 console.log(`Runtime Version: ${RUNTIME_VERSION}`)
 const getGlobalModule = (m) => {
   return typeof global !== 'undefined' ? global.module : m
