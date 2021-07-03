@@ -549,15 +549,42 @@ class Widget extends Base {
   }
 
   async actionUpdate() {
+    const adapter = (encoding) => async (url) => {
+      const req = new Request(url)
+      req.timeoutInterval = 5
+      let resp
+      if (encoding === 'json') {
+        resp = await req.loadJSON()
+      } else if (encoding === 'string') {
+        resp = await req.loadString()
+      } else {
+        resp = await req.load()
+      }
+      if (req.response.statusCode !== 200) {
+        throw new Error(req.response)
+      }
+      return resp
+    }
+    const make = adapter => async (url, encoding) => {
+      const request = adapter(encoding)
+      let response = await request(url).catch(err => console.error(`Request Failed Error:${err}`))
+      if (!response) {
+        const fallbackUrl = `https://api.tornhub.xyz:8092/v1/file/get?url=${encodeURIComponent(url)}`
+        console.log(`请求fallback: ${fallbackUrl}`)
+        response = await request(fallbackUrl).catch(err => console.error(`Fallback Failed Error:${err}`))
+      }
+      return response
+    }
+    const get = make(adapter)
+
     let name = Script.name()
     const fileName = `${name}.js`
     if (name.endsWith('.dist')) {
       name = name.substr(0, name.length - 5)
     }
-    let manifestURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
-    const manifestReq = new Request(manifestURL)
     console.log('开始检查更新')
-    const manifest = await manifestReq.loadJSON().catch((err) => { console.error(`检查更新发生错误: ${err}`) })
+    let manifestURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
+    const manifest = await get(manifestURL, 'json').catch((err) => { console.error(`检查更新发生错误: ${err}`) })
     if (!manifest) return
     if (manifest['version'] == this.version) {
       console.log('当前版本已经是最新')
@@ -570,13 +597,9 @@ class Widget extends Base {
     let response = await alert.presentAlert()
     if (response == 1) return
     console.log('开始下载更新')
-    const REMOTE_REQ = new Request(`https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/${name}-${manifest.version}.js`)
-    const REMOTE_RES = await REMOTE_REQ.load().catch((err) => { console.error(`下载更新发生错误: ${err}`) })
+    const downloadURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/${name}-${manifest.version}.js`
+    const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
     if (!REMOTE_RES) return
-    if (REMOTE_REQ.response.statusCode !== 200) {
-      console.log('下载更新失败')
-      return
-    }
     console.log('开始写入更新')
     const FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
     FILE_MGR.write(FILE_MGR.joinPath(FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
