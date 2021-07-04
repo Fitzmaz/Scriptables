@@ -94,8 +94,6 @@ class Widget extends Base {
     this.name = 'TORN 小组件'
     this.version = '0.1.3'
     this.desc = `版本 ${this.version}`
-
-    this.registerAction('检查更新', this.actionUpdate)
   }
 
   /**
@@ -546,72 +544,5 @@ class Widget extends Base {
     }
     return result
   }
-
-  async actionUpdate() {
-    const adapter = (encoding) => async (url) => {
-      const req = new Request(url)
-      req.timeoutInterval = 5
-      let resp
-      if (encoding === 'json') {
-        resp = await req.loadJSON()
-      } else if (encoding === 'string') {
-        resp = await req.loadString()
-      } else {
-        resp = await req.load()
-      }
-      const { statusCode } = req.response
-      if (statusCode !== 200) {
-        throw new Error(`Failed to request ${url} with status code ${statusCode}.`)
-      }
-      return resp
-    }
-    const make = adapter => async (url, encoding) => {
-      const request = adapter(encoding)
-      let response = await request(url).catch(err => console.warn(`Request Failed Error:${err}`))
-      if (!response) {
-        const fallbackUrl = `https://api.tornhub.xyz:8092/v1/file/get?url=${encodeURIComponent(url)}`
-        console.log(`请求fallback: ${fallbackUrl}`)
-        response = await request(fallbackUrl).catch(err => console.error(`Fallback Failed Error:${err}`))
-      }
-      return response
-    }
-    const get = make(adapter)
-
-    let name = Script.name()
-    const fileName = `${name}.js`
-    if (name.endsWith('.dist')) {
-      name = name.substr(0, name.length - 5)
-    }
-    console.log('开始检查更新')
-    let manifestURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
-    const manifest = await get(manifestURL, 'json').catch((err) => { console.error(`检查更新发生错误: ${err}`) })
-    if (!manifest) return
-    if (manifest['version'] == this.version) {
-      console.log('当前版本已经是最新')
-      return
-    }
-    let alert = new Alert()
-    alert.message = `新版本 ${manifest.version} 是否更新`
-    alert.addAction('是')
-    alert.addAction('否')
-    let response = await alert.presentAlert()
-    if (response == 1) return
-    console.log('开始下载更新')
-    const downloadURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/${name}-${manifest.version}.js`
-    const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
-    if (!REMOTE_RES) return
-    console.log('开始写入更新')
-    const FILE_MGR = FileManager[globalThis.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
-    FILE_MGR.write(FILE_MGR.joinPath(FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
-  }
-
-  /**
-   * 自定义注册点击事件，用 actionUrl 生成一个触发链接，点击后会执行下方对应的 action
-   * @param {string} url 打开的链接
-   */
-  async actionOpenUrl(url) {
-    Safari.openInApp(url, false)
-  }
-
 }
 // @组件代码结束
