@@ -16,6 +16,8 @@ console.log(`Runtime Version: ${RUNTIME_VERSION}`)
 class Base {
   constructor (arg="") {
     this.arg = arg
+    this.version = ""
+    this.desc = ""
     this._actions = {}
     this.init()
   }
@@ -757,6 +759,63 @@ const makeCopyAction = (M) => async () => {
   await M.notify("复制成功", "当前脚本的源代码已复制到剪贴板！")
 }
 
+const updateAction = (M) => async () => {
+  const adapter = (encoding) => async (url) => {
+    const req = new Request(url)
+    req.timeoutInterval = 5
+    let resp
+    if (encoding === 'json') {
+      resp = await req.loadJSON()
+    } else if (encoding === 'string') {
+      resp = await req.loadString()
+    } else {
+      resp = await req.load()
+    }
+    const { statusCode } = req.response
+    if (statusCode !== 200) {
+      throw new Error(`Failed to request ${url} with status code ${statusCode}.`)
+    }
+    return resp
+  }
+  const make = adapter => async (url, encoding) => {
+    const request = adapter(encoding)
+    let response = await request(url).catch(err => console.warn(`Request Failed Error:${err}`))
+    if (!response) {
+      const fallbackUrl = `https://api.tornhub.xyz:8092/v1/file/get?url=${encodeURIComponent(url)}`
+      console.log(`请求fallback: ${fallbackUrl}`)
+      response = await request(fallbackUrl).catch(err => console.error(`Fallback Failed Error:${err}`))
+    }
+    return response
+  }
+  const get = make(adapter)
+
+  let name = Script.name()
+  const fileName = `${name}.js`
+  if (name.endsWith('.dist')) {
+    name = name.substr(0, name.length - 5)
+  }
+  console.log('开始检查更新')
+  let manifestURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
+  const manifest = await get(manifestURL, 'json').catch((err) => { console.error(`检查更新发生错误: ${err}`) })
+  if (!manifest) return
+  if (manifest['version'] == M.version) {
+    console.log('当前版本已经是最新')
+    return
+  }
+  let alert = new Alert()
+  alert.message = `新版本 ${manifest.version} 是否更新`
+  alert.addAction('是')
+  alert.addAction('否')
+  let response = await alert.presentAlert()
+  if (response == 1) return
+  console.log('开始下载更新')
+  const downloadURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/${name}-${manifest.version}.js`
+  const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
+  if (!REMOTE_RES) return
+  console.log('开始写入更新')
+  M.FILE_MGR.write(M.FILE_MGR.joinPath(M.FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
+}
+
 // 运行环境
 const makeExec = (debug) => async (Widget, default_args = "") => {
   let M = null
@@ -780,6 +839,8 @@ const makeExec = (debug) => async (Widget, default_args = "") => {
           makePreviewAction(M),
           makeCopyAction(M)
         )
+      } else {
+        _actions.push(updateAction(M))
       }
       const alert = new Alert()
       alert.title = M.name
@@ -787,6 +848,8 @@ const makeExec = (debug) => async (Widget, default_args = "") => {
       if (debug) {
         alert.addAction("预览组件")
         alert.addAction("复制源码")
+      } else {
+        alert.addAction("检查更新")
       }
       for (let _ in actions) {
         alert.addAction(_)
