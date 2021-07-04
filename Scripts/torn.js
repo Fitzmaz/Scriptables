@@ -559,8 +559,9 @@ class Widget extends Base {
       } else {
         resp = await req.load()
       }
-      if (req.response.statusCode !== 200) {
-        throw new Error(req.response)
+      const { statusCode } = req.response
+      if (statusCode !== 200) {
+        throw new Error(`Failed to request ${url} with status code ${statusCode}.`)
       }
       return resp
     }
