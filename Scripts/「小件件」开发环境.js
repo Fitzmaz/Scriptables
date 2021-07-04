@@ -45,8 +45,8 @@ class Base {
 
   /**
    * 注册点击操作菜单
-   * @param {string} name 操作函数名
-   * @param {func} func 点击后执行的函数
+   * @param {String} name 操作函数名
+   * @param {Function} func 点击后执行的函数
    */
   registerAction (name, func) {
     this._actions[name] = func.bind(this)
@@ -54,8 +54,8 @@ class Base {
 
   /**
    * 生成操作回调URL，点击后执行本脚本，并触发相应操作
-   * @param {string} name 操作的名称
-   * @param {string} data 传递的数据
+   * @param {String} name 操作的名称
+   * @param {String} data 传递的数据
    */
   actionUrl (name = '', data = '') {
     let u = URLScheme.forRunningScript()
@@ -71,7 +71,7 @@ class Base {
 
   /**
    * base64 编码字符串
-   * @param {string} str 要编码的字符串
+   * @param {String} str 要编码的字符串
    */
   base64Encode (str) {
     const data = Data.fromString(str)
@@ -80,7 +80,7 @@ class Base {
 
   /**
    * base64解码数据 返回字符串
-   * @param {string} b64 base64编码的数据
+   * @param {String} b64 base64编码的数据
    */
   base64Decode (b64) {
     const data = Data.fromBase64String(b64)
@@ -89,7 +89,7 @@ class Base {
 
   /**
    * md5 加密字符串
-   * @param {string} str 要加密成md5的数据
+   * @param {String} str 要加密成md5的数据
    */
   md5 (str) {
     function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}function i(n,t){var r,e,o,u;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;for(var c=1732584193,f=-271733879,i=-1732584194,a=271733878,h=0;h<n.length;h+=16)c=l(r=c,e=f,o=i,u=a,n[h],7,-680876936),a=l(a,c,f,i,n[h+1],12,-389564586),i=l(i,a,c,f,n[h+2],17,606105819),f=l(f,i,a,c,n[h+3],22,-1044525330),c=l(c,f,i,a,n[h+4],7,-176418897),a=l(a,c,f,i,n[h+5],12,1200080426),i=l(i,a,c,f,n[h+6],17,-1473231341),f=l(f,i,a,c,n[h+7],22,-45705983),c=l(c,f,i,a,n[h+8],7,1770035416),a=l(a,c,f,i,n[h+9],12,-1958414417),i=l(i,a,c,f,n[h+10],17,-42063),f=l(f,i,a,c,n[h+11],22,-1990404162),c=l(c,f,i,a,n[h+12],7,1804603682),a=l(a,c,f,i,n[h+13],12,-40341101),i=l(i,a,c,f,n[h+14],17,-1502002290),c=v(c,f=l(f,i,a,c,n[h+15],22,1236535329),i,a,n[h+1],5,-165796510),a=v(a,c,f,i,n[h+6],9,-1069501632),i=v(i,a,c,f,n[h+11],14,643717713),f=v(f,i,a,c,n[h],20,-373897302),c=v(c,f,i,a,n[h+5],5,-701558691),a=v(a,c,f,i,n[h+10],9,38016083),i=v(i,a,c,f,n[h+15],14,-660478335),f=v(f,i,a,c,n[h+4],20,-405537848),c=v(c,f,i,a,n[h+9],5,568446438),a=v(a,c,f,i,n[h+14],9,-1019803690),i=v(i,a,c,f,n[h+3],14,-187363961),f=v(f,i,a,c,n[h+8],20,1163531501),c=v(c,f,i,a,n[h+13],5,-1444681467),a=v(a,c,f,i,n[h+2],9,-51403784),i=v(i,a,c,f,n[h+7],14,1735328473),c=g(c,f=v(f,i,a,c,n[h+12],20,-1926607734),i,a,n[h+5],4,-378558),a=g(a,c,f,i,n[h+8],11,-2022574463),i=g(i,a,c,f,n[h+11],16,1839030562),f=g(f,i,a,c,n[h+14],23,-35309556),c=g(c,f,i,a,n[h+1],4,-1530992060),a=g(a,c,f,i,n[h+4],11,1272893353),i=g(i,a,c,f,n[h+7],16,-155497632),f=g(f,i,a,c,n[h+10],23,-1094730640),c=g(c,f,i,a,n[h+13],4,681279174),a=g(a,c,f,i,n[h],11,-358537222),i=g(i,a,c,f,n[h+3],16,-722521979),f=g(f,i,a,c,n[h+6],23,76029189),c=g(c,f,i,a,n[h+9],4,-640364487),a=g(a,c,f,i,n[h+12],11,-421815835),i=g(i,a,c,f,n[h+15],16,530742520),c=m(c,f=g(f,i,a,c,n[h+2],23,-995338651),i,a,n[h],6,-198630844),a=m(a,c,f,i,n[h+7],10,1126891415),i=m(i,a,c,f,n[h+14],15,-1416354905),f=m(f,i,a,c,n[h+5],21,-57434055),c=m(c,f,i,a,n[h+12],6,1700485571),a=m(a,c,f,i,n[h+3],10,-1894986606),i=m(i,a,c,f,n[h+10],15,-1051523),f=m(f,i,a,c,n[h+1],21,-2054922799),c=m(c,f,i,a,n[h+8],6,1873313359),a=m(a,c,f,i,n[h+15],10,-30611744),i=m(i,a,c,f,n[h+6],15,-1560198380),f=m(f,i,a,c,n[h+13],21,1309151649),c=m(c,f,i,a,n[h+4],6,-145523070),a=m(a,c,f,i,n[h+11],10,-1120210379),i=m(i,a,c,f,n[h+2],15,718787259),f=m(f,i,a,c,n[h+9],21,-343485551),c=d(c,r),f=d(f,e),i=d(i,o),a=d(a,u);return[c,f,i,a]}function a(n){for(var t="",r=32*n.length,e=0;e<r;e+=8)t+=String.fromCharCode(n[e>>5]>>>e%32&255);return t}function h(n){var t=[];for(t[(n.length>>2)-1]=void 0,e=0;e<t.length;e+=1)t[e]=0;for(var r=8*n.length,e=0;e<r;e+=8)t[e>>5]|=(255&n.charCodeAt(e/8))<<e%32;return t}function e(n){for(var t,r="0123456789abcdef",e="",o=0;o<n.length;o+=1)t=n.charCodeAt(o),e+=r.charAt(t>>>4&15)+r.charAt(15&t);return e}function r(n){return unescape(encodeURIComponent(n))}function o(n){return a(i(h(t=r(n)),8*t.length));var t}function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
@@ -99,10 +99,10 @@ class Base {
 
   /**
    * HTTP 请求接口
-   * @param {string} url 请求的url
-   * @param {bool} json 返回数据是否为 json，默认 true
-   * @param {bool} useCache 是否采用离线缓存（请求失败后获取上一次结果），
-   * @return {string | json | null}
+   * @param {String} url 请求的url
+   * @param {Boolean} json 返回数据是否为 json，默认 true
+   * @param {Boolean} useCache 是否采用离线缓存（请求失败后获取上一次结果），
+   * @return {Promise<String | Object | null>}
    */
   async httpGet (url, json = true, useCache = false) {
     let data = null
@@ -130,8 +130,8 @@ class Base {
 
   /**
    * 获取远程图片内容
-   * @param {string} url 图片地址
-   * @param {bool} useCache 是否使用缓存（请求失败时获取本地缓存）
+   * @param {String} url 图片地址
+   * @param {Boolean} useCache 是否使用缓存（请求失败时获取本地缓存）
    */
   async getImageByUrl (url, useCache = true) {
     const cacheKey = this.md5(url)
@@ -158,12 +158,12 @@ class Base {
 
   /**
    * 渲染标题内容
-   * @param {object} widget 组件对象
-   * @param {string} icon 图标地址
-   * @param {string} title 标题内容
-   * @param {bool|color} color 字体的颜色（自定义背景时使用，默认系统）
+   * @param {Object} widget 组件对象
+   * @param {String} icon 图标地址
+   * @param {String} title 标题内容
+   * @param {Color} color 字体的颜色（自定义背景时使用，默认系统）
    */
-  async renderHeader (widget, icon, title, color = false) {
+  async renderHeader (widget, icon, title, color = null) {
     widget.addSpacer(10)
     let header = widget.addStack()
     header.centerAlignContent()
@@ -184,7 +184,7 @@ class Base {
    * 可用作透明背景
    * 返回图片image对象
    * 代码改自：https://gist.github.com/mzeryck/3a97ccd1e059b3afa3c6666d27a496c9
-   * @param {string} title 开始处理前提示用户截图的信息，可选（适合用在组件自定义透明背景时提示）
+   * @param {String} title 开始处理前提示用户截图的信息，可选（适合用在组件自定义透明背景时提示）
    */
   async getWidgetScreenShot (title = null) {
     // Generate an alert with the provided array of options.
@@ -530,7 +530,7 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
     message += (height == 1136 ? " （备注：当前设备只支持两行小组件，所以下边选项中的「中间」和「底部」的选项是一致的）" : "")
 
     // Determine image crop based on phone size.
-    let crop = { w: "", h: "", x: "", y: "" }
+    let crop = { w: 0, h: 0, x: 0, y: 0 }
     if (widgetSize == "小尺寸") {
       crop.w = phone.small
       crop.h = phone.small
@@ -585,11 +585,11 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
 
   /**
    * 弹出一个通知
-   * @param {string} title 通知标题
-   * @param {string} body 通知内容
-   * @param {string} url 点击后打开的URL
+   * @param {String} title 通知标题
+   * @param {String} body 通知内容
+   * @param {String} url 点击后打开的URL
    */
-  async notify (title, body, url, opts = {}) {
+  async notify (title, body, url = null, opts = {}) {
     let n = new Notification()
     n = Object.assign(n, opts);
     n.title = title
@@ -602,8 +602,8 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
   /**
    * 给图片加一层半透明遮罩
    * @param {Image} img 要处理的图片
-   * @param {string} color 遮罩背景颜色
-   * @param {float} opacity 透明度
+   * @param {String} color 遮罩背景颜色
+   * @param {Number} opacity 透明度
    */
   async shadowImage (img, color = '#000000', opacity = 0.7) {
     let ctx = new DrawContext()
@@ -620,7 +620,7 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
   
   /**
    * 获取当前插件的设置
-   * @param {boolean} json 是否为json格式
+   * @param {Boolean} json 是否为json格式
    */
   getSettings(json=true){
     let res=json?{}:""
@@ -648,7 +648,7 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
 
   /**
    * 存储当前设置
-   * @param {bool} notify 是否通知提示
+   * @param {Boolean} notify 是否通知提示
    */
   saveSettings(notify=true){
     let res= (typeof this.settings==="object")?JSON.stringify(this.settings):String(this.settings)
@@ -676,7 +676,7 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
 
   /**
    * 设置当前组件的背景图片
-   * @param {image} img 
+   * @param {Image} img 
    */
   setBackgroundImage (img, notify = true) {
     if (!img) {
