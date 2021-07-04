@@ -702,9 +702,63 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
 }
 // @base.end
 
+// 预览组件
+const makePreviewAction = (M) => async () => {
+  let a = new Alert()
+  a.title = "预览组件"
+  a.message = "测试桌面组件在各种尺寸下的显示效果"
+  a.addAction("小尺寸 Small")
+  a.addAction("中尺寸 Medium")
+  a.addAction("大尺寸 Large")
+  a.addAction("全部 All")
+  a.addCancelAction("取消操作")
+  let i = await a.presentSheet()
+  if (i === -1) return
+  let w
+  switch (i) {
+    case 0:
+      M.widgetFamily = 'small'
+      w = await M.render()
+      await w.presentSmall()
+      break;
+    case 1:
+      M.widgetFamily = 'medium'
+      w = await M.render()
+      await w.presentMedium()
+      break
+    case 2:
+      M.widgetFamily = 'large'
+      w = await M.render()
+      await w.presentLarge()
+      break
+    case 3:
+      M.widgetFamily = 'small'
+      w = await M.render()
+      await w.presentSmall()
+      M.widgetFamily = 'medium'
+      w = await M.render()
+      await w.presentMedium()
+      M.widgetFamily = 'large'
+      w = await M.render()
+      await w.presentLarge()
+      break
+    default:
+      break;
+  }
+
+  return i
+}
+
+// 复制源码
+const makeCopyAction = (M) => async () => {
+  const SELF_FILE = globalThis.module.filename.replace('「小件件」开发环境', Script.name())
+  const source = FileManager.local().readString(SELF_FILE)
+  Pasteboard.copyString(source)
+  await M.notify("复制成功", "当前脚本的源代码已复制到剪贴板！")
+}
+
 // 运行环境
-// @running.start
-const Running = async (Widget, default_args = "") => {
+const makeExec = (debug) => async (Widget, default_args = "") => {
   let M = null
   // 判断hash是否和当前设备匹配
   if (config.runsInWidget || config.runsWithSiri) {
@@ -721,9 +775,19 @@ const Running = async (Widget, default_args = "") => {
       // 弹出选择菜单
       const actions = M['_actions']
       const _actions = []
+      if (debug) {
+        _actions.push(
+          makePreviewAction(M),
+          makeCopyAction(M)
+        )
+      }
       const alert = new Alert()
       alert.title = M.name
       alert.message = M.desc
+      if (debug) {
+        alert.addAction("预览组件")
+        alert.addAction("复制源码")
+      }
       for (let _ in actions) {
         alert.addAction(_)
         _actions.push(actions[_])
@@ -744,116 +808,9 @@ const Running = async (Widget, default_args = "") => {
     }
   }
 }
-// @running.end
 
-// 测试环境
-// @testing.start
-const Testing = async (Widget, default_args = "") => {
-  let M = null
-  // 判断hash是否和当前设备匹配
-  if (config.runsInWidget) {
-    M = new Widget(args.widgetParameter || '')
-    const W = await M.render()
-    Script.setWidget(W)
-    Script.complete()
-  } else {
-    let { act, data, __arg, __size } = args.queryParameters
-    M = new Widget(__arg || default_args || '')
-    if (__size) M.init(__size)
-    if (!act || !M['_actions']) {
-      // 弹出选择菜单
-      const actions = M['_actions']
-      const _actions = [
-        // 预览组件
-        async (debug = false) => {
-          let a = new Alert()
-          a.title = "预览组件"
-          a.message = "测试桌面组件在各种尺寸下的显示效果"
-          a.addAction("小尺寸 Small")
-          a.addAction("中尺寸 Medium")
-          a.addAction("大尺寸 Large")
-          a.addAction("全部 All")
-          a.addCancelAction("取消操作")
-          const funcs = []
-          if (debug) {
-            for (let _ in actions) {
-              a.addAction(_)
-              funcs.push(actions[_].bind(M))
-            }
-            a.addDestructiveAction("停止调试")
-          }
-          let i = await a.presentSheet()
-          if (i === -1) return
-          let w
-          switch (i) {
-            case 0:
-              M.widgetFamily = 'small'
-              w = await M.render()
-              await w.presentSmall()
-              break;
-            case 1:
-              M.widgetFamily = 'medium'
-              w = await M.render()
-              await w.presentMedium()
-              break
-            case 2:
-              M.widgetFamily = 'large'
-              w = await M.render()
-              await w.presentLarge()
-              break
-            case 3:
-              M.widgetFamily = 'small'
-              w = await M.render()
-              await w.presentSmall()
-              M.widgetFamily = 'medium'
-              w = await M.render()
-              await w.presentMedium()
-              M.widgetFamily = 'large'
-              w = await M.render()
-              await w.presentLarge()
-              break
-            default:
-              const func = funcs[i - 4];
-              if (func) await func();
-              break;
-          }
-
-          return i
-        },
-        // 复制源码
-        async () => {
-          const SELF_FILE = globalThis.module.filename.replace('「小件件」开发环境', Script.name())
-          const source = FileManager.local().readString(SELF_FILE)
-          Pasteboard.copyString(source)
-          await M.notify("复制成功", "当前脚本的源代码已复制到剪贴板！")
-        },
-      ]
-      const alert = new Alert()
-      alert.title = M.name
-      alert.message = M.desc
-      alert.addAction("预览组件")
-      alert.addAction("复制源码")
-      for (let _ in actions) {
-        alert.addAction(_)
-        _actions.push(actions[_])
-      }
-      alert.addCancelAction("取消操作")
-      const idx = await alert.presentSheet()
-      if (_actions[idx]) {
-        const func = _actions[idx]
-        await func()
-      }
-      return
-    }
-    let _tmp = act.split('-').map(_ => _[0].toUpperCase() + _.substr(1)).join('')
-    let _act = `action${_tmp}`
-    if (M[_act] && typeof M[_act] === 'function') {
-      const func = M[_act].bind(M)
-      await func(data)
-    }
-  }
-}
-// @testing.end
+const Running = makeExec(false)
+const Testing = makeExec(true)
 
 module.exports = {
   Base,
