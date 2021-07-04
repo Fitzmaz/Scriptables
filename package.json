@@ -6,8 +6,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app",
-    "watch": "nodemon dist.js",
+    "watch-src": "webpack --watch --env development",
+    "watch-build": "nodemon --watch build dist.js build",
+    "watch": "concurrently \"npm:watch-src\" \"npm:watch-build\"",
     "build": "webpack"
   },
   "author": "",
@@ -20,6 +21,7 @@
     "multer": "^1.4.2"
   },
   "devDependencies": {
+    "concurrently": "^6.2.0",
     "nodemon": "^2.0.9",
     "webpack": "^5.26.3",
     "webpack-cli": "^4.5.0",

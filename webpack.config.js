@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const ScriptablePlugin = require('./webpack/scriptable-plugin')
 
 module.exports = env => {
@@ -12,11 +13,15 @@ module.exports = env => {
       torn: './Scripts/torn.js'
     },
     plugins: [
-      new ScriptablePlugin()
+      new webpack.DefinePlugin({
+        PRODUCTION: JSON.stringify(!isDevelopment),
+      }),
+      new ScriptablePlugin(),
     ],
     output: {
-      filename: '[name]/[name].js',
-      path: path.resolve(__dirname, 'Dist'),
+      filename: '[name].js',
+      path: path.resolve(__dirname, 'build'),
+      // 输出library，ScriptablePlugin会在末尾加上"await Scriptable.run();"
       library: {
         name: 'Scriptable',
         type: 'var',
