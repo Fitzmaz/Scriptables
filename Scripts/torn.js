@@ -602,7 +602,7 @@ class Widget extends Base {
     const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
     if (!REMOTE_RES) return
     console.log('开始写入更新')
-    const FILE_MGR = FileManager[global.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+    const FILE_MGR = FileManager[globalThis.module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
     FILE_MGR.write(FILE_MGR.joinPath(FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
   }
 
