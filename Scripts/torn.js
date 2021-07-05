@@ -506,7 +506,7 @@ class Widget extends Base {
     function parseIconTimeLeft(iconString) {
       // 3 days, 15 hours, 49 minutes and 59 seconds
       let matches = iconString.match(/\d+ \w+/g)
-      if (matches.length <= 0) {
+      if (matches === null || matches.length <= 0) {
         return 0
       }
       return matches.reduce((acc, val) => {
@@ -529,7 +529,7 @@ class Widget extends Base {
     function parseIconHHMMSSTimeLeft(iconString) {
       // 00:25:31
       let matches = iconString.match(/\d{2}:\d{2}:\d{2}/g)
-      if (matches.length <= 0) {
+      if (matches === null || matches.length <= 0) {
         return 0
       }
       let hhmmss = matches[0]
