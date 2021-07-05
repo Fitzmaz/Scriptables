@@ -84,6 +84,104 @@ function formatTimeLeft(t) {
   return undefined
 }
 
+// UI
+// 以375x667 pt作为最低适配分辨率，此时widget为148x148 pt，四分布局最小间距8 pt，因此每个正方形边长为70 pt
+const wMargin = 8
+const wBlockEdgeLength = 70
+const wSmallEdgeLength = wMargin + wBlockEdgeLength * 2
+class TokenOption {
+  constructor(text, textColor, backgroundColor) {
+    this.text = text
+    this.textColor = textColor
+    this.backgroundColor = backgroundColor
+  }
+}
+function addTextToken(parent, tokenOption) {
+  const { text, textColor, backgroundColor } = tokenOption
+  const fontSize = 14
+  const tokenFont = Font.semiboldSystemFont(fontSize)
+  const tokenCornerRadius = 8
+  let textToken = parent.addStack()
+  textToken.size = new Size(0, tokenCornerRadius * 2)
+  textToken.backgroundColor = backgroundColor
+  textToken.cornerRadius = tokenCornerRadius
+  textToken.addSpacer()
+  let tokenText = textToken.addText(text)
+  if (textColor) {
+    tokenText.textColor = textColor
+  }
+  tokenText.lineLimit = 1
+  tokenText.font = tokenFont
+  tokenText.minimumScaleFactor = 0.8
+  textToken.addSpacer()
+  return textToken
+}
+function renderTokenStack(parent, tokenOptions, paddingLeft, paddingRight) {
+  for (const option of tokenOptions) {
+    const cell = parent.addStack()
+    cell.size = new Size(parent.size.width, 0)
+    // debug
+    // cell.backgroundColor = Color.white()
+    cell.addSpacer(paddingLeft)
+    addTextToken(cell, option)
+    cell.addSpacer(paddingRight)
+  }
+}
+class CountdownOption {
+  constructor(date, symbolName, glyph) {
+    this.date = date
+    this.symbolName = symbolName
+    this.glyph = glyph
+  }
+}
+function addCountdown(parent, countdownOption) {
+  const cell = parent.addStack()
+  cell.centerAlignContent()
+  cell.addSpacer(4)
+  const { date, symbolName, glyph } = countdownOption
+  if (useSFSymbol) {
+    let symbol = SFSymbol.named(symbolName)
+    let wImage = cell.addImage(symbol.image)
+    const fontSize = 10
+    wImage.imageSize = new Size(fontSize, fontSize)
+    wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
+  } else {
+    cell.addText(glyph).font = thisFont
+  }
+  let dateBox = cell.addStack()
+  let dateBoxText = dateBox.addText(` @ ${formatHHMM(date)}`)
+  dateBoxText.font = thisFont
+  dateBoxText.lineLimit = 1
+  let timerBox = cell.addStack()
+  let timerBoxText = timerBox.addText(` in `)
+  timerBoxText.font = thisFont
+  timerBoxText.lineLimit = 1
+  let timer = timerBox.addDate(date)
+  timer.font = thisFont
+  timer.lineLimit = 1
+  timer.applyTimerStyle()
+  return cell
+}
+
+function addContainerV(parent, height) {
+  parent.addSpacer()
+  const container = parent.addStack()
+  container.size = new Size(0, height)
+  return container
+}
+function addContainerH(parent, width) {
+  parent.addSpacer()
+  const container = parent.addStack()
+  container.size = new Size(width, 0)
+  return container
+}
+function addSquare(parent, edgeLength){
+  parent.addSpacer()
+  const container = parent.addStack()
+  container.size = new Size(edgeLength, edgeLength)
+  return container
+}
+
 class Widget extends Base {
   /**
    * 传递给组件的参数，可以是桌面 Parameter 数据，也可以是外部如 URLScheme 等传递的数据
@@ -111,47 +209,83 @@ class Widget extends Base {
       result.timestamp = Math.floor(Date.now() / 1000)
     }
     const data = await this.parseData(result)
+    const w = new ListWidget()
     switch (this.widgetFamily) {
       case 'large':
-        return await this.renderLarge(data)
+        await this.renderLarge(w, data)
+        break
       case 'medium':
-        return await this.renderMedium(data)
+        this.renderMedium(w, data)
+        break
       default:
-        return await this.renderSmall(data)
+        this.renderSmall(w, data)
     }
+    return w 
   }
 
   /**
    * 渲染小尺寸组件
    */
-  async renderSmall(data) {
-    // 以375x667 pt作为最低适配分辨率，此时widget为148x148 pt，四分布局最小间距8 pt，因此每个正方形边长为70 pt
-    const wMargin = 8
-    const edgeLength = 70
-    function addContainer(w) {
-      w.addSpacer()
-      const container = w.addStack()
-      container.size = new Size(0, edgeLength)
-      return container
+  renderSmall(parent, data) {
+    // parent必须为ListWidget或垂直布局的WidgetStack
+    let leftTokenOptions = []
+    switch (data[DataKeyStatus]) {
+      case 'Abroad':
+        leftTokenOptions.push(new TokenOption('abroad', new Color('#ececec', 1), Color.blue()))
+        break;
+      case 'Traveling':
+        leftTokenOptions.push(new TokenOption('flying', new Color('#ececec', 1), Color.purple()))
+        break;
+      default:
+        leftTokenOptions.push(new TokenOption('okay', new Color('#ececec', 1), Color.green()))
+        break;
     }
-    function addSquare(container) {
-      container.addSpacer()
-      const square = container.addStack()
-      square.size = new Size(edgeLength, edgeLength)
-      return square
+    for (const key of [DataKeyEnergy, DataKeyNerve]) {
+      const barColors = {
+        energy: EnergyColor,
+        nerve: NerveColor
+      }
+      const barData = data[key]
+      leftTokenOptions.push(new TokenOption(`${barData.current}/${barData.maximum}`, new Color('#ececec', 1), new Color(barColors[key], 1)))
+    }
+    leftTokenOptions.push(new TokenOption(`refill:${data[DataKeyRefills]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
+    //
+    let rightTokenOptions = []
+    for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC, DataKeyRacing]) {
+      if (!data[key]) continue
+      const names = {
+        [DataKeyBank]: '🏦',
+        [DataKeyEducation]: '🎓',
+        [DataKeyOC]: 'OC ',
+        [DataKeyRacing]: '🏁'
+      }
+      const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
+      let timeLeftObject = formatTimeLeft(data[key])
+      let timeLeftString = timeLeftObject ? `${timeLeftObject.value}${timeLeftObject.unit[0]}` : `now`
+      rightTokenOptions.push(new TokenOption(`${names[key]}${timeLeftString}`, null, tokenBGColor))
+    }
+    //
+    let countdownOptions = []
+    const keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]
+    for (const key of keys) {
+      if (!data[key]) continue
+      let value = data[key]
+      // cooldowns
+      const symbolName = sfNames[key]
+      const glyph = cooldownsChar[key]
+      countdownOptions.push(new CountdownOption(value, symbolName, glyph))
     }
 
-    let w = new ListWidget()
-    let topContainer = addContainer(w)
-    let leftSquare = addSquare(topContainer)
-    let rightSquare = addSquare(topContainer)
+    let topContainer = addContainerV(parent, wBlockEdgeLength)
+    let leftSquare = addSquare(topContainer, wBlockEdgeLength)
+    let rightSquare = addSquare(topContainer, wBlockEdgeLength)
     topContainer.addSpacer()
-    let bottomContainer = addContainer(w)
+    let bottomContainer = addContainerV(parent, wBlockEdgeLength)
     bottomContainer.addSpacer()
     let bottomRect = bottomContainer.addStack()
-    bottomRect.size = new Size(edgeLength * 2 + wMargin, edgeLength)
+    bottomRect.size = new Size(wSmallEdgeLength, wBlockEdgeLength)
     bottomContainer.addSpacer()
-    w.addSpacer()
+    parent.addSpacer()
 
     // debug
     // w.backgroundColor = Color.gray()
@@ -162,138 +296,39 @@ class Widget extends Base {
     // leftSquare
     leftSquare.layoutVertically()
     leftSquare.addSpacer()
-    // centerAlignContent似乎仅针对水平布局的WidgetStack，垂直布局的WidgetStack无法让内容左右居中
-    // leftSquare.centerAlignContent()
-    function addTextToken(container, { text, textColor, backgroundColor, paddingLeft, paddingRight }) {
-      const cell = container.addStack()
-      cell.size = new Size(container.size.width, 0)
-      // cell.backgroundColor = Color.white()
-      cell.addSpacer(paddingLeft)
-      const fontSize = 14
-      const tokenFont = Font.semiboldSystemFont(fontSize)
-      const tokenCornerRadius = 8
-      let textToken = cell.addStack()
-      textToken.size = new Size(0, tokenCornerRadius * 2)
-      textToken.backgroundColor = backgroundColor
-      textToken.cornerRadius = tokenCornerRadius
-      textToken.addSpacer()
-      let tokenText = textToken.addText(text)
-      if (textColor) {
-        tokenText.textColor = textColor
-      }
-      tokenText.lineLimit = 1
-      tokenText.font = tokenFont
-      tokenText.minimumScaleFactor = 0.8
-      textToken.addSpacer()
-      cell.addSpacer(paddingRight)
-    }
-    function leftTokenOptions(text, backgroundColor) {
-      return {
-        text,
-        textColor: new Color('#ececec', 1),
-        backgroundColor,
-        paddingLeft: 3,
-        paddingRight: 0
-      }
-    }
-    switch (data[DataKeyStatus]) {
-      case 'Abroad':
-        addTextToken(leftSquare, leftTokenOptions('abroad', Color.blue()))
-        break;
-      case 'Traveling':
-        addTextToken(leftSquare, leftTokenOptions('flying', Color.purple()))
-        break;
-      default:
-        addTextToken(leftSquare, leftTokenOptions('okay', Color.green()))
-        break;
-    }
-    for (const key of [DataKeyEnergy, DataKeyNerve]) {
-      const barColors = {
-        energy: EnergyColor,
-        nerve: NerveColor
-      }
-      const barData = data[key]
-      let percent = barData.current / barData.maximum
-      addTextToken(leftSquare, leftTokenOptions(`${barData.current}/${barData.maximum}`, new Color(barColors[key], 1)))
-    }
-    addTextToken(leftSquare, leftTokenOptions(`refill:${data[DataKeyRefills]}`, new Color('#6cadde', 1)))
+    renderTokenStack(leftSquare, leftTokenOptions, 3, 0)
     leftSquare.addSpacer()
 
     // rightSquare
     rightSquare.layoutVertically()
     rightSquare.addSpacer()
-    for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC]) {
-      if (!data[key]) continue
-      const names = {
-        [DataKeyBank]: '🏦',
-        [DataKeyEducation]: '🎓',
-        [DataKeyOC]: 'OC '
-      }
-      const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
-      let timeLeftObject = formatTimeLeft(data[key])
-      let timeLeftString = timeLeftObject ? `${timeLeftObject.value}${timeLeftObject.unit[0]}` : `now`
-      addTextToken(rightSquare, {
-        text: `${names[key]}${timeLeftString}`,
-        textColor: null,
-        backgroundColor: tokenBGColor,
-        paddingLeft: 0,
-        paddingRight: 4
-      })
-    }
-    if (data[DataKeyRacing]) {
-      const { status, timeLeft } = data[DataKeyRacing]
-      const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
-      let timeLeftObject = formatTimeLeft(timeLeft)
-      let timeLeftString = timeLeftObject ? `${timeLeftObject.value}${timeLeftObject.unit[0]}` : `now`
-      addTextToken(rightSquare, {
-        text: `🏁${timeLeftString}`,
-        textColor: null,
-        backgroundColor: tokenBGColor,
-        paddingLeft: 0,
-        paddingRight: 4
-      })
-    }
+    renderTokenStack(rightSquare, rightTokenOptions, 0, 4)
     rightSquare.addSpacer()
 
     // bottomRect放置各种cooldowns
     bottomRect.layoutVertically()
-    const keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]
-    for (const key of keys) {
-      if (!data[key]) continue
-      const cell = bottomRect.addStack()
-      cell.centerAlignContent()
-      cell.addSpacer(4)
-      let value = data[key]
-      // cooldowns
-      if (useSFSymbol) {
-        let symbol = SFSymbol.named(sfNames[key])
-        let wImage = cell.addImage(symbol.image)
-        const fontSize = 10
-        wImage.imageSize = new Size(fontSize, fontSize)
-        wImage.tintColor = Color.dynamic(new Color('#000000', 1), new Color('#ffffff', 1))
-      } else {
-        cell.addText(cooldownsChar[key]).font = thisFont
-      }
-      let dateBox = cell.addStack()
-      let dateBoxText = dateBox.addText(` @ ${formatHHMM(value)}`)
-      dateBoxText.font = thisFont
-      dateBoxText.lineLimit = 1
-      let timerBox = cell.addStack()
-      let timerBoxText = timerBox.addText(` in `)
-      timerBoxText.font = thisFont
-      timerBoxText.lineLimit = 1
-      let timer = timerBox.addDate(value)
-      timer.font = thisFont
-      timer.lineLimit = 1
-      timer.applyTimerStyle()
+    for (const option of countdownOptions) {
+      addCountdown(bottomRect, option)
     }
+  }
+  renderMedium(parent, data) {
+    const container = parent.addStack()
+    const left = addContainerH(container, wSmallEdgeLength)
+    left.layoutVertically()
+    const right = addContainerH(container, wSmallEdgeLength)
+    right.layoutVertically()
+    container.addSpacer()
+    this.renderSmall(left, data)
+    this.renderSmall(right, data)
 
-    return w
+    // debug
+    // left.backgroundColor = Color.orange()
+    // right.backgroundColor = Color.purple()
   }
   /**
    * 渲染中尺寸组件
    */
-  async renderMedium(data, keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]) {
+  async _renderMedium(data, keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]) {
     let w = new ListWidget()
     await this.renderHeader(w, null, 'TORN CITY')
     for (const key of keys) {
@@ -410,7 +445,7 @@ class Widget extends Base {
   /**
    * 渲染大尺寸组件
    */
-  async renderLarge(data) {
+  async renderLarge(w, data) {
     const keys = [
       DataKeyStatus,
       DataKeyEnergy,
@@ -423,7 +458,7 @@ class Widget extends Base {
       DataKeyEducation,
       DataKeyOC
     ]
-    return await this.renderMedium(data, keys)
+    return await this._renderMedium(data, keys)
   }
 
   /**
@@ -496,12 +531,12 @@ class Widget extends Base {
       // Racing - Waiting for a race to start - 00:25:31
       // Racing - Currently racing - 00:04:35
       let status = icons.icon17.toLowerCase().indexOf('wait') ? RacingStatusWaiting : RacingStatusRacing
-      result[DataKeyRacing] = { status, timeLeft: parseIconHHMMSSTimeLeft(icons.icon17) }
+      result[DataKeyRacing] = parseIconHHMMSSTimeLeft(icons.icon17)
     } else if (icons.icon18) {
       // Racing - You finished 4th in the Stone Park race. Your best lap was 01:15.73
-      result[DataKeyRacing] = { status: RacingStatusFinished, timeLeft: 0 }
+      result[DataKeyRacing] = 0
     } else {
-      result[DataKeyRacing] = { status: RacingStatusNone, timeLeft: 0 }
+      result[DataKeyRacing] = 0
     }
     function parseIconTimeLeft(iconString) {
       // 3 days, 15 hours, 49 minutes and 59 seconds
