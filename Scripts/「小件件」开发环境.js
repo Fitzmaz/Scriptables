@@ -8,7 +8,7 @@
 // https://github.com/im3x/Scriptables
 // 
 
-const RUNTIME_VERSION = 20210703
+const RUNTIME_VERSION = 20210705
 console.log(`Runtime Version: ${RUNTIME_VERSION}`)
 
 // 组件基础类
