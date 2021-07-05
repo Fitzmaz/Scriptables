@@ -456,6 +456,10 @@ class Widget extends Base {
       if (cooldowns[key] === 0) continue
       let cooldownDate = formatCooldown(timestamp, cooldowns[key])
       result[key] = cooldownDate
+      // medical不通知
+      if (key === DataKeyMedical) {
+        continue
+      }
       // setup notification
       await scheduleNotification({
         identifier: `torn.cooldowns.${key}`,
