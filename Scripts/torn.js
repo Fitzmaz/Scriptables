@@ -14,6 +14,8 @@ const { Base } = require("./「小件件」开发环境")
 
 // @组件代码开始
 
+const storage = require('./storage')
+
 // constants
 const DataKeyTimestamp = 'timestamp'
 const DataKeyStatus = 'status'
@@ -26,19 +28,22 @@ const DataKeyMedical = 'medical'
 const DataKeyBank = 'bank'
 const DataKeyEducation = 'education'
 const DataKeyOC = 'oc'
+const DataKeyPI = 'pi'
 const DataKeyRefills = 'refills'
 const DataKeyRacing = 'racing'
 const sfNames = {
   [DataKeyTravel]: 'airplane',
   [DataKeyDrug]: 'pills.fill',
   [DataKeyBooster]: 'shift.fill',
-  [DataKeyMedical]: 'cross.case.fill'
+  [DataKeyMedical]: 'cross.case.fill',
+  [DataKeyRacing]: 'car.fill'
 }
 const cooldownsChar = {
   [DataKeyTravel]: '飞',
   [DataKeyDrug]: '药',
   [DataKeyBooster]: '酒',
-  [DataKeyMedical]: '医'
+  [DataKeyMedical]: '医',
+  [DataKeyRacing]: '车'
 }
 const RacingStatusWaiting = 'RacingStatusWaiting'
 const RacingStatusRacing = 'RacingStatusRacing'
@@ -201,14 +206,34 @@ class Widget extends Base {
   async render() {
     let APIKey = this.arg
     let result
+    let piDaysLeft
     if (typeof APIKey === 'string' && APIKey.length > 0) {
       const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education,refills,icons&key=${APIKey}&comment=TornWidget`
       result = await this.httpGet(api, true, false)
+      // 
+      const PropertyDataKey = 'PropertyDataKey'
+      const propertyData = storage.getJSON(PropertyDataKey)
+      let days
+      if (propertyData && Date.now() - propertyData.timestamp < 1000 * 60 * 60 * 24) {
+        days = propertyData.days
+      } else {
+        const propertyAPI = `https://api.torn.com/property/?selections=property&key=${APIKey}&comment=TornWidget`
+        const data = await this.httpGet(propertyAPI, true, false)
+        if (data && data.property && data.property.rented) {
+          days = data.property.rented.days_left
+          storage.setJSON(PropertyDataKey, { days, timestamp: Date.now()})
+        } else {
+          console.warn('invalid property data')
+        }
+      }
+      piDaysLeft = days
     } else {
       result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127],"refills":{"energy_refill_used":true,"nerve_refill_used":false,"token_refill_used":false,"special_refills_available":0},"icons":{"icon6":"Male","icon4":"Subscriber - Donator status: 92 days - Subscriber until: 24/08/21","icon8":"Married - To Trefor","icon29":"Bank Investment - Current bank investment worth $3,639,000,000 - 60 days, 23 hours, 34 minutes and 39 seconds","icon27":"Company - Chandler of Lead Farmers (Candle Shop)","icon9":"Faction - Karajan of November Chopin","icon19":"Education - Currently completing the Bachelor of Psychological Sciences course - 26 days, 9 hours, 9 minutes and 58 seconds","icon38":"Stock Market - You own shares in the stock market","icon85":"Organized Crime - Planned Robbery - 3 days, 15 hours, 47 minutes and 0 seconds","icon39":"Booster Cooldown - 01:24:28 / 24:00:00","icon52":"Drug Cooldown - Under the influence of Xanax - 03:03:50 ","icon78":"Property Upkeep war - $21,755,000 is due in property upkeep","icon17":"Racing - Waiting for a race to start - 00:58:29"}}
       result.timestamp = Math.floor(Date.now() / 1000)
+      piDaysLeft = 88
     }
     const data = await this.parseData(result)
+    data[DataKeyPI] = piDaysLeft * 60 * 60 * 24
     const w = new ListWidget()
     switch (this.widgetFamily) {
       case 'large':
@@ -251,13 +276,13 @@ class Widget extends Base {
     leftTokenOptions.push(new TokenOption(`refill:${data[DataKeyRefills]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
     //
     let rightTokenOptions = []
-    for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC, DataKeyRacing]) {
+    for (const key of [DataKeyBank, DataKeyEducation, DataKeyOC, DataKeyPI]) {
       if (!data[key]) continue
       const names = {
         [DataKeyBank]: '🏦',
         [DataKeyEducation]: '🎓',
         [DataKeyOC]: 'OC ',
-        [DataKeyRacing]: '🏁'
+        [DataKeyPI]: 'PI '
       }
       const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
       let timeLeftObject = formatTimeLeft(data[key])
@@ -266,7 +291,7 @@ class Widget extends Base {
     }
     //
     let countdownOptions = []
-    const keys = [DataKeyTravel, DataKeyDrug, DataKeyBooster, DataKeyMedical]
+    const keys = [DataKeyTravel, DataKeyRacing, DataKeyDrug, DataKeyBooster, DataKeyMedical]
     for (const key of keys) {
       if (!data[key]) continue
       let value = data[key]
@@ -531,12 +556,15 @@ class Widget extends Base {
       // Racing - Waiting for a race to start - 00:25:31
       // Racing - Currently racing - 00:04:35
       let status = icons.icon17.toLowerCase().indexOf('wait') ? RacingStatusWaiting : RacingStatusRacing
-      result[DataKeyRacing] = parseIconHHMMSSTimeLeft(icons.icon17)
+      let timeLeft = parseIconHHMMSSTimeLeft(icons.icon17)
+      if (timeLeft) {
+        result[DataKeyRacing] = formatCooldown(timestamp, timeLeft)
+      }
     } else if (icons.icon18) {
       // Racing - You finished 4th in the Stone Park race. Your best lap was 01:15.73
-      result[DataKeyRacing] = 0
+      result[DataKeyRacing] = null
     } else {
-      result[DataKeyRacing] = 0
+      result[DataKeyRacing] = null
     }
     function parseIconTimeLeft(iconString) {
       // 3 days, 15 hours, 49 minutes and 59 seconds
