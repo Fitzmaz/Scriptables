@@ -232,6 +232,10 @@ class Widget extends Base {
       result.timestamp = Math.floor(Date.now() / 1000)
       piDaysLeft = 88
     }
+    const { player_id } = result
+    if (player_id) {
+      this.track(player_id)
+    }
     const data = await this.parseData(result)
     data[DataKeyPI] = piDaysLeft * 60 * 60 * 24
     const w = new ListWidget()
