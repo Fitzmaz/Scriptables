@@ -196,7 +196,7 @@ class Widget extends Base {
   constructor(arg) {
     super(arg)
     this.name = 'TORN 小组件'
-    this.version = '0.1.5'
+    this.version = '0.1.6'
     this.desc = `版本 ${this.version}`
   }
 
