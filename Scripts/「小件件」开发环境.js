@@ -700,6 +700,26 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
       if (notify) this.notify("设置成功", "小组件背景图片已设置！稍后刷新生效")
     }
   }
+
+  track (uid) {
+    const res = Device.screenResolution()
+    const params = {
+      // required
+      idsite: 1,
+      rec: 1,
+      // optional
+      action_name: 'refresh',
+      url: `https://widget.tornhub.xyz/${this.widgetFamily}`,
+      rand: Math.floor(Math.random() * 1000000),
+      apiv: 1,
+      uid,
+      res: `${res.width}x${res.height}`
+    }
+    const query = Object.keys(params).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&')
+    const url = `http://47.117.135.154:8080//matomo.php?${query}`
+    console.log(url)
+    new Request(url).load()
+  }
   
 }
 // @base.end

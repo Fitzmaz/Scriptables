@@ -1,6 +1,12 @@
 module.exports = {
   set(key, value) {
-    Keychain.set(key, value)
+    let v
+    if (typeof value === 'number') {
+      v = String(value)
+    } else {
+      v = value
+    }
+    Keychain.set(key, v)
   },
   get(key) {
     if (!Keychain.contains(key)) {
