@@ -16,6 +16,7 @@ console.log(`Runtime Version: ${RUNTIME_VERSION}`)
 class Base {
   constructor (arg="") {
     this.arg = arg
+    this.name = ""
     this.version = ""
     this.desc = ""
     this._actions = {}
@@ -710,14 +711,19 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
       // optional
       action_name: 'refresh',
       url: `https://widget.tornhub.xyz/${this.widgetFamily}`,
+      _id: UUID.string().replaceAll("-", "").substring(0, 16),
       rand: Math.floor(Math.random() * 1000000),
       apiv: 1,
-      uid,
       res: `${res.width}x${res.height}`
     }
+    if (uid) {
+      params.uid = uid
+    }
+    if (this.version) {
+      params.dimension1 = this.version
+    }
     const query = Object.keys(params).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&')
-    const url = `http://47.117.135.154:8080//matomo.php?${query}`
-    console.log(url)
+    const url = `http://47.117.135.154:8080/matomo.php?${query}`
     new Request(url).load()
   }
   
