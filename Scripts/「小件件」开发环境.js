@@ -821,7 +821,7 @@ const updateAction = (M) => async () => {
     name = name.substr(0, name.length - 5)
   }
   console.log('开始检查更新')
-  let manifestURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
+  let manifestURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
   const manifest = await get(manifestURL, 'json').catch((err) => { console.error(`检查更新发生错误: ${err}`) })
   if (!manifest) return
   if (manifest['version'] == M.version) {
@@ -835,7 +835,7 @@ const updateAction = (M) => async () => {
   let response = await alert.presentAlert()
   if (response == 1) return
   console.log('开始下载更新')
-  const downloadURL = `https://raw.githubusercontent.com/Fitzmaz/Scriptables/v2-dev/Dist/${name}/${name}-${manifest.version}.js`
+  const downloadURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${name}/${name}-${manifest.version}.js`
   const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
   if (!REMOTE_RES) return
   console.log('开始写入更新')
