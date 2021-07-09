@@ -272,10 +272,11 @@ class Widget extends Base {
       const barData = data[key]
       leftTokenOptions.push(new TokenOption(`${barData.current}/${barData.maximum}`, new Color('#ececec', 1), new Color(barColors[key], 1)))
     }
-    //TODO: refill放到其他位置
-    // leftTokenOptions.push(new TokenOption(`refill:${data[DataKeyRefills]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
     if (data[DataKeyDrugAddictionPoints]) {
       leftTokenOptions.push(new TokenOption(`${data[DataKeyDrugAddictionPoints]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
+    } else {
+      //TODO: refill放到其他位置
+      leftTokenOptions.push(new TokenOption(`refill:${data[DataKeyRefills]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
     }
     //
     let rightTokenOptions = []
