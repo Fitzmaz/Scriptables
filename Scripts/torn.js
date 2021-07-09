@@ -218,7 +218,7 @@ class Widget extends Base {
       const api = `https://api.torn.com/user/?selections=timestamp,basic,travel,cooldowns,bars,money,education,refills,icons&key=${APIKey}&comment=TornWidget`
       result = await this.httpGet(api, true, false)
       piDaysLeft = await this.getPIDaysLeft(APIKey)
-      drugAddictionPoints = await this.getDrugAddictionPoints(APIKey)
+      drugAddictionPoints = await this.getDrugAddictionPoints(APIKey).catch(err => { console.log(`Get addiction failed. ${err}`) })
     } else {
       result = {"timestamp":1615639666,"level":25,"gender":"Male","player_id":2587304,"name":"microdust","server_time":1615639666,"points":36,"cayman_bank":0,"vault_amount":0,"daily_networth":5379662754,"money_onhand":600293,"education_current":61,"education_timeleft":1545972,"status":{"description":"Traveling to United Kingdom","details":"","state":"Traveling","color":"blue","until":0},"travel":{"destination":"United Kingdom","timestamp":1615644140,"departed":1615637300,"time_left":4474},"cooldowns":{"drug":27118,"medical":17393,"booster":13236},"happy":{"current":4938,"maximum":5025,"increment":5,"interval":900,"ticktime":734,"fulltime":16034},"life":{"current":685,"maximum":1181,"increment":70,"interval":300,"ticktime":134,"fulltime":2234},"energy":{"current":30,"maximum":150,"increment":5,"interval":600,"ticktime":134,"fulltime":13934},"nerve":{"current":15,"maximum":61,"increment":1,"interval":300,"ticktime":134,"fulltime":13634},"chain":{"current":0,"maximum":10000,"timeout":0,"modifier":1,"cooldown":0},"city_bank":{"amount":2436000000,"time_left":6732555},"education_completed":[14,18,19,20,34,43,44,45,46,47,48,49,50,51,52,54,112,113,126,127],"refills":{"energy_refill_used":true,"nerve_refill_used":false,"token_refill_used":false,"special_refills_available":0},"icons":{"icon6":"Male","icon4":"Subscriber - Donator status: 92 days - Subscriber until: 24/08/21","icon8":"Married - To Trefor","icon29":"Bank Investment - Current bank investment worth $3,639,000,000 - 60 days, 23 hours, 34 minutes and 39 seconds","icon27":"Company - Chandler of Lead Farmers (Candle Shop)","icon9":"Faction - Karajan of November Chopin","icon19":"Education - Currently completing the Bachelor of Psychological Sciences course - 26 days, 9 hours, 9 minutes and 58 seconds","icon38":"Stock Market - You own shares in the stock market","icon85":"Organized Crime - Planned Robbery - 3 days, 15 hours, 47 minutes and 0 seconds","icon39":"Booster Cooldown - 01:24:28 / 24:00:00","icon52":"Drug Cooldown - Under the influence of Xanax - 03:03:50 ","icon78":"Property Upkeep war - $21,755,000 is due in property upkeep","icon17":"Racing - Waiting for a race to start - 00:58:29"}}
       result.timestamp = Math.floor(Date.now() / 1000)
@@ -502,7 +502,12 @@ class Widget extends Base {
     params.comment = 'TornWidget'
     let query = Object.keys(params).map(key => `${key}=${params[key]}`).join('&')
     let url = `https://api.torn.com/${path}?${query}`
-    return await this.httpGet(url, true, false)
+    const data = await this.httpGet(url, true, false)
+    if (data.error) {
+      let { code, error } = data.error;
+      throw new Error(`API error ${code} ${error}`)
+    }
+    return data
   }
   async getPIDaysLeft(APIKey) {
     const PropertyDataKey = 'PropertyDataKey'
