@@ -34,7 +34,9 @@ const DataKeyBank = 'bank'
 const DataKeyEducation = 'education'
 const DataKeyOC = 'oc'
 const DataKeyPI = 'pi'
-const DataKeyRefills = 'refills'
+const DataKeyEnergyRefills = 'refills.energy'
+const DataKeyNerveRefills = 'refills.nerve'
+const DataKeyTokenRefills = 'refills.token'
 const DataKeyRacing = 'racing'
 const sfNames = {
   [DataKeyTravel]: 'airplane',
@@ -66,6 +68,8 @@ const thisFont = Font.regularSystemFont(fontSize)
 const textSpacerLenght = 4
 const EnergyColor = '#4d7c1e'
 const NerveColor = '#b3382c'
+const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
+const tokenCornerRadius = 8
 
 // utils
 function addLeadingZeros(number, n = 2) {
@@ -114,7 +118,6 @@ function addTextToken(parent, tokenOption) {
   const { text, textColor, backgroundColor } = tokenOption
   const fontSize = 14
   const tokenFont = Font.semiboldSystemFont(fontSize)
-  const tokenCornerRadius = 8
   let textToken = parent.addStack()
   textToken.size = new Size(0, tokenCornerRadius * 2)
   textToken.backgroundColor = backgroundColor
@@ -181,6 +184,7 @@ function addContainerV(parent, height) {
   parent.addSpacer()
   const container = parent.addStack()
   container.size = new Size(0, height)
+  container.setPadding(0, -wMargin, 0, -wMargin)
   return container
 }
 function addContainerH(parent, width) {
@@ -296,7 +300,7 @@ class Widget extends Base {
       leftTokenOptions.push(new TokenOption(`${data[DataKeyDrugAddictionPoints]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
     } else {
       //TODO: refill放到其他位置
-      leftTokenOptions.push(new TokenOption(`refill:${data[DataKeyRefills]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
+      leftTokenOptions.push(new TokenOption(`refill:${data[DataKeyEnergyRefills]}`, new Color('#ececec', 1), new Color('#6cadde', 1)))
     }
     //
     let rightTokenOptions = []
@@ -308,7 +312,6 @@ class Widget extends Base {
         [DataKeyOC]: 'OC ',
         [DataKeyPI]: 'PI '
       }
-      const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
       let timeLeftObject = formatTimeLeft(data[key])
       let timeLeftString
       if (timeLeftObject) {
@@ -342,14 +345,16 @@ class Widget extends Base {
     bottomContainer.addSpacer()
     let bottomRect = bottomContainer.addStack()
     bottomRect.size = new Size(wSmallEdgeLength, wBlockEdgeLength)
+    bottomRect.cornerRadius = tokenCornerRadius
+    bottomRect.backgroundColor = tokenBGColor
     bottomContainer.addSpacer()
     parent.addSpacer()
 
     // debug
-    // w.backgroundColor = Color.gray()
+    // topContainer.backgroundColor = Color.white()
+    // bottomContainer.backgroundColor = Color.black()
     // leftSquare.backgroundColor = Color.red()
     // rightSquare.backgroundColor = Color.green()
-    // bottomRect.backgroundColor = Color.blue()
 
     // leftSquare
     leftSquare.layoutVertically()
@@ -377,11 +382,59 @@ class Widget extends Base {
     right.layoutVertically()
     container.addSpacer()
     this.renderSmall(left, data)
-    this.renderSmall(right, data)
+
+    let leftTokenOptions = []
+    leftTokenOptions.push(new TokenOption('refills', null, tokenBGColor))
+    for (const key of [DataKeyEnergyRefills, DataKeyNerveRefills, DataKeyTokenRefills]) {
+      if (typeof data[key] === 'undefined') continue
+      const names = {
+        [DataKeyEnergyRefills]: 'ener',
+        [DataKeyNerveRefills]: 'nerv',
+        [DataKeyTokenRefills]: 'toke',
+      }
+      leftTokenOptions.push(new TokenOption(`${names[key]}:${data[key]}`, null, tokenBGColor))
+    }
+
+    let rightTokenOptions = []
+    for (let i = 0; i < 4; i++) {
+      rightTokenOptions.push(new TokenOption('', null, tokenBGColor))
+    }
+
+    let topContainer = addContainerV(right, wBlockEdgeLength)
+    let leftSquare = addSquare(topContainer, wBlockEdgeLength)
+    let rightSquare = addSquare(topContainer, wBlockEdgeLength)
+    topContainer.addSpacer()
+    let bottomContainer = addContainerV(right, wBlockEdgeLength)
+    bottomContainer.addSpacer()
+    let bottomRect = bottomContainer.addStack()
+    bottomRect.size = new Size(wSmallEdgeLength, wBlockEdgeLength)
+    bottomRect.cornerRadius = tokenCornerRadius
+    bottomRect.backgroundColor = tokenBGColor
+    bottomContainer.addSpacer()
+    right.addSpacer()
 
     // debug
-    // left.backgroundColor = Color.orange()
-    // right.backgroundColor = Color.purple()
+    // container.backgroundColor = Color.cyan()
+    // left.backgroundColor = Color.gray()
+    // right.backgroundColor = Color.gray()
+
+    // leftSquare
+    leftSquare.layoutVertically()
+    leftSquare.addSpacer()
+    renderTokenStack(leftSquare, leftTokenOptions, 3, 0)
+    leftSquare.addSpacer()
+
+    // rightSquare
+    rightSquare.layoutVertically()
+    rightSquare.addSpacer()
+    renderTokenStack(rightSquare, rightTokenOptions, 0, 4)
+    rightSquare.addSpacer()
+
+    // bottomRect放置各种cooldowns
+    // bottomRect.layoutVertically()
+    // for (const option of countdownOptions) {
+    //   addCountdown(bottomRect, option)
+    // }
   }
   /**
    * 渲染中尺寸组件
@@ -622,12 +675,21 @@ class Widget extends Base {
     }
     // refills
     let { refills } = data
-    if (refills && typeof refills.energy_refill_used !== 'undefined' && typeof refills.special_refills_available !== 'undefined') {
-      let r = Number(refills.special_refills_available)
-      if (!refills.energy_refill_used) {
-        r += 1
+    if (refills) {
+      const { energy_refill_used, nerve_refill_used, token_refill_used, special_refills_available } = refills
+      if (typeof energy_refill_used !== 'undefined' && typeof special_refills_available !== 'undefined') {
+        let r = Number(special_refills_available)
+        if (!energy_refill_used) {
+          r += 1
+        }
+        result[DataKeyEnergyRefills] = r
       }
-      result[DataKeyRefills] = r
+      if (typeof nerve_refill_used !== 'undefined') {
+        result[DataKeyNerveRefills] = nerve_refill_used ? 0 : 1
+      }
+      if (typeof token_refill_used !== 'undefined') {
+        result[DataKeyTokenRefills] = token_refill_used ? 0 : 1
+      }
     }
     // icons
     let { icons } = data
