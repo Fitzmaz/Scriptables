@@ -13,14 +13,14 @@ const AddictionPoints = {
 
 const OverdosePoints = {
   196: 0, // Cannabis
-  197: 0, // Ecstasy
+  197: 20, // Ecstasy
   198: 50, // Ketamine
-  199: 0, // LSD
+  199: 50, // LSD
   200: 0, // Opium
-  201: 0, // PCP
+  201: 50, // PCP
   203: 50, // Shrooms
-  204: 0, // Speed
-  205: 0, // Vicodin
+  204: 50, // Speed
+  205: 50, // Vicodin
   206: 100, // Xanax
 }
 
@@ -142,9 +142,6 @@ function createNullDrugRows(logs) {
 }
 
 function createTableRows(rehabLogs, drugLogs) {
-  // NSDictionary乱序，需要先按timestamp降序
-  rehabLogs.sort(compareTimestampDesc)
-  drugLogs.sort(compareTimestampDesc)
   let tableRows = []
   // API默认返回按时间倒序，这里需要按时间顺序遍历
   for (let i = rehabLogs.length - 1; i > 0; i--) {

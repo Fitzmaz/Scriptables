@@ -535,18 +535,17 @@ class Widget extends Base {
     return days
   }
   async getDrugAddictionPoints(APIKey) {
-    const rehabLogs = await this.fetchAPI('user', {
+    const drugs = await this.fetchAPI('user', {
       selections: 'log',
-      log: '6005',
+      cat: '61',
       key: APIKey,
     }).catch(err => { throw err })
-    const drugLogs = await this.fetchAPI('user', {
-      selections: 'log',
-      cat: '62',
-      key: APIKey,
-    }).catch(err => { throw err })
+    const logs = Object.values(drugs.log).sort((a, b) => b.timestamp - a.timestamp)
+    const LogTypeRehab = 6005
+    const rehabLogs = logs.filter(record => record.log === LogTypeRehab)
+    const drugLogs = logs.filter(record => record.log !== LogTypeRehab)
     console.log('drug addiction points resolving.')
-    const rows = createTableRows(Object.values(rehabLogs.log), Object.values(drugLogs.log))
+    const rows = createTableRows(rehabLogs, drugLogs)
     if (!rows.length) { throw new Error('createTableRows return empty') }
     const { points } = rows.pop()
     console.log(`drug addiction points resolved ${points}`)
