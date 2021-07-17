@@ -3,8 +3,10 @@ module.exports = {
     let v
     if (typeof value === 'number') {
       v = String(value)
-    } else {
+    } else if (typeof value === 'string') {
       v = value
+    } else {
+      return
     }
     Keychain.set(key, v)
   },
