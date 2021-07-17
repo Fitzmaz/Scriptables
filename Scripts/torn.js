@@ -20,6 +20,9 @@ const { createTableRows } = require('./DrugAddiction')
 // constants
 const DataKeyTimestamp = 'timestamp'
 const DataKeyStatus = 'status'
+const UserStatusStateHospital = 'Hospital'
+const UserStatusStateTraveling = 'Traveling'
+const UserStatusStateAbroad = 'Abroad'
 const DataKeyEnergy = 'energy'
 const DataKeyNerve = 'nerve'
 const DataKeyDrugAddictionPoints = 'dap'
@@ -268,11 +271,14 @@ class Widget extends Base {
     // parent必须为ListWidget或垂直布局的WidgetStack
     let leftTokenOptions = []
     switch (data[DataKeyStatus]) {
-      case 'Abroad':
+      case UserStatusStateAbroad:
         leftTokenOptions.push(new TokenOption('abroad', new Color('#ececec', 1), Color.blue()))
         break;
-      case 'Traveling':
+      case UserStatusStateTraveling:
         leftTokenOptions.push(new TokenOption('flying', new Color('#ececec', 1), Color.purple()))
+        break;
+      case UserStatusStateHospital:
+        leftTokenOptions.push(new TokenOption('hosp', new Color('#ececec', 1), Color.red()))
         break;
       default:
         leftTokenOptions.push(new TokenOption('okay', new Color('#ececec', 1), Color.green()))
