@@ -634,8 +634,10 @@ class Widget extends Base {
     if (icons.icon17) {
       // Racing - Waiting for a race to start - 00:25:31
       // Racing - Currently racing - 00:04:35
+      // 新版剩余时间格式与OC统一
+      // Racing - Waiting for a race to start - 0 days, 0 hours, 56 minutes and 9 seconds
       let status = icons.icon17.toLowerCase().indexOf('wait') ? RacingStatusWaiting : RacingStatusRacing
-      let timeLeft = parseIconHHMMSSTimeLeft(icons.icon17)
+      let timeLeft = parseIconTimeLeft(icons.icon17)
       if (timeLeft) {
         result[DataKeyRacing] = formatCooldown(timestamp, timeLeft)
       }
@@ -648,35 +650,32 @@ class Widget extends Base {
     function parseIconTimeLeft(iconString) {
       // 3 days, 15 hours, 49 minutes and 59 seconds
       let matches = iconString.match(/\d+ \w+/g)
-      if (matches === null || matches.length <= 0) {
-        return 0
+      if (matches !== null && matches.length > 0) {
+        return matches.reduce((acc, val) => {
+          let components = val.split(' ')
+          let time = Number(components[0])
+          let unit = components[1]
+          if (unit === 'days') {
+            return acc + time * 60 * 60 * 24
+          } else if (unit === 'hours') {
+            return acc + time * 60 * 60
+          } else if (unit === 'minutes') {
+            return acc + time * 60
+          } else if (unit === 'seconds') {
+            return acc + time
+          } else {
+            return acc
+          }
+        }, 0)
       }
-      return matches.reduce((acc, val) => {
-        let components = val.split(' ')
-        let time = Number(components[0])
-        let unit = components[1]
-        if (unit === 'days') {
-          return acc + time * 60 * 60 * 24
-        } else if (unit === 'hours') {
-          return acc + time * 60 * 60
-        } else if (unit === 'minutes') {
-          return acc + time * 60
-        } else if (unit === 'seconds') {
-          return acc + time
-        } else {
-          return acc
-        }
-      }, 0)
-    }
-    function parseIconHHMMSSTimeLeft(iconString) {
       // 00:25:31
-      let matches = iconString.match(/\d{2}:\d{2}:\d{2}/g)
-      if (matches === null || matches.length <= 0) {
-        return 0
+      matches = iconString.match(/\d{2}:\d{2}:\d{2}/g)
+      if (matches !== null && matches.length > 0) {
+        let hhmmss = matches[0]
+        let components = hhmmss.split(':')
+        return components[0] * 3600 + components[1] * 60 + Number(components[2])
       }
-      let hhmmss = matches[0]
-      let components = hhmmss.split(':')
-      return components[0] * 3600 + components[1] * 60 + Number(components[2])
+      return 0
     }
     async function scheduleNotification(options, triggerDate) {
       const { identifier } = options
