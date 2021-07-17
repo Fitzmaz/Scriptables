@@ -702,15 +702,31 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
     }
   }
 
-  track (uid) {
+  track (action, uid) {
     const res = Device.screenResolution()
+    let page
+    if (config.runsInWidget) {
+      page = `widget.${this.widgetFamily}`
+    } else if (config.runsWithSiri) {
+      page = 'siri'
+    } else if (config.runsInApp) {
+      page = 'app'
+    } else if (config.runsInNotification) {
+      page = 'notification'
+    } else if (config.runsInActionExtension) {
+      page = 'actionExtension'
+    } else if (config.runsFromHomeScreen) {
+      page = 'homeScreen'
+    } else {
+      page = 'unknown'
+    }
     const params = {
       // required
       idsite: 1,
       rec: 1,
       // optional
-      action_name: 'refresh',
-      url: `https://widget.tornhub.xyz/${this.widgetFamily}`,
+      action_name: action,
+      url: `https://widget.tornhub.xyz/${page}`,
       _id: UUID.string().replaceAll("-", "").substring(0, 16),
       rand: Math.floor(Math.random() * 1000000),
       apiv: 1,
