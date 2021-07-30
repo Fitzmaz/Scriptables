@@ -831,13 +831,11 @@ const updateAction = (M) => async () => {
   }
   const get = make(adapter)
 
-  let name = Script.name()
+  let name = M.name
+  let encodedName = encodeURIComponent(name)
   const fileName = `${name}.js`
-  if (name.endsWith('.dist')) {
-    name = name.substr(0, name.length - 5)
-  }
   console.log('开始检查更新')
-  let manifestURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${name}/manifest.json?_=${Date.now()}`
+  let manifestURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${encodedName}/manifest.json?_=${Date.now()}`
   const manifest = await get(manifestURL, 'json').catch((err) => { console.error(`检查更新发生错误: ${err}`) })
   if (!manifest) return
   if (manifest['version'] == M.version) {
@@ -851,7 +849,7 @@ const updateAction = (M) => async () => {
   let response = await alert.presentAlert()
   if (response == 1) return
   console.log('开始下载更新')
-  const downloadURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${name}/${name}-${manifest.version}.js`
+  const downloadURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${encodedName}/${encodedName}-${manifest.version}.js`
   const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
   if (!REMOTE_RES) return
   console.log('开始写入更新')
@@ -885,7 +883,7 @@ const makeExec = (debug) => async (Widget, default_args = "") => {
         _actions.push(updateAction(M))
       }
       const alert = new Alert()
-      alert.title = M.name
+      alert.title = `${M.name.toUpperCase()} 小组件`
       alert.message = M.desc
       if (debug) {
         alert.addAction("预览组件")
