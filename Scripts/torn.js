@@ -101,6 +101,16 @@ function formatTimeLeft(t) {
   }
   return undefined
 }
+async function scheduleNotification(options, triggerDate) {
+  const { identifier } = options
+  await Notification.removePending([identifier])
+  let n = new Notification()
+  n.openURL = 'alook://'
+  n.sound = 'default'
+  n = Object.assign(n, options)
+  n.setTriggerDate(triggerDate)
+  await n.schedule()
+}
 
 // UI
 // 以375x667 pt作为最低适配分辨率，此时widget为148x148 pt，四分布局最小间距8 pt，因此每个正方形边长为70 pt
@@ -156,7 +166,7 @@ function addCountdown(parent, countdownOption) {
   cell.centerAlignContent()
   cell.addSpacer(4)
   const { date, symbolName, glyph } = countdownOption
-  if (useSFSymbol) {
+  if (useSFSymbol && symbolName) {
     let symbol = SFSymbol.named(symbolName)
     let wImage = cell.addImage(symbol.image)
     const fontSize = 10
@@ -260,7 +270,7 @@ class Widget extends Base {
         await this.renderLarge(w, data)
         break
       case 'medium':
-        this.renderMedium(w, data)
+        await this.renderMedium(w, data)
         break
       default:
         this.renderSmall(w, data)
@@ -374,7 +384,7 @@ class Widget extends Base {
       addCountdown(bottomRect, option)
     }
   }
-  renderMedium(parent, data) {
+  async renderMedium(parent, data) {
     const container = parent.addStack()
     const left = addContainerH(container, wSmallEdgeLength)
     left.layoutVertically()
@@ -398,6 +408,44 @@ class Widget extends Base {
     let rightTokenOptions = []
     for (let i = 0; i < 4; i++) {
       rightTokenOptions.push(new TokenOption('', null, tokenBGColor))
+    }
+
+    const loot = await this.httpGet("https://yata.yt/api/v1/loot/", true, false)
+    const NPC = {
+      "4": {
+        name: "DUKE",
+        glyph: "杜",
+      },
+      "15": {
+        name: "Leslie",
+        glyph: "莱",
+      },
+      "19": {
+        name: "Jimmy",
+        glyph: "吉",
+      },
+      "20": {
+        name: "Fernando",
+        glyph: "费",
+      },
+      "21": {
+        name: "Tiny",
+        glyph: "小",
+      },
+    }
+    let countdownOptions = []
+    for (const id of ["4", "15", "20", "21"]) {
+      if (!loot || !loot.hosp_out || !loot.hosp_out[id]) continue
+      // level 4
+      const date = new Date((loot.hosp_out[id] + 210 * 60) * 1000)
+      const glyph = NPC[id].glyph
+      countdownOptions.push(new CountdownOption(date, null, glyph))
+      //
+      await scheduleNotification({
+        identifier: `torn.npc.${id}`,
+        title: 'Torn NPC',
+        body: `Loot ${NPC[id].name} in 5 minutes`
+      }, new Date(date.getTime() - 5 * 60 * 1000))
     }
 
     let topContainer = addContainerV(right, wBlockEdgeLength)
@@ -431,10 +479,10 @@ class Widget extends Base {
     rightSquare.addSpacer()
 
     // bottomRect放置各种cooldowns
-    // bottomRect.layoutVertically()
-    // for (const option of countdownOptions) {
-    //   addCountdown(bottomRect, option)
-    // }
+    bottomRect.layoutVertically()
+    for (const option of countdownOptions) {
+      addCountdown(bottomRect, option)
+    }
   }
   /**
    * 渲染中尺寸组件
@@ -744,16 +792,6 @@ class Widget extends Base {
         return components[0] * 3600 + components[1] * 60 + Number(components[2])
       }
       return 0
-    }
-    async function scheduleNotification(options, triggerDate) {
-      const { identifier } = options
-      await Notification.removePending([identifier])
-      let n = new Notification()
-      n.openURL = 'alook://'
-      n.sound = 'default'
-      n = Object.assign(n, options)
-      n.setTriggerDate(triggerDate)
-      await n.schedule()
     }
     return result
   }
