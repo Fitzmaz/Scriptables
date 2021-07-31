@@ -444,7 +444,8 @@ class Widget extends Base {
       await scheduleNotification({
         identifier: `torn.npc.${id}`,
         title: 'Torn NPC',
-        body: `Loot ${NPC[id].name} in 5 minutes`
+        body: `Loot ${NPC[id].name} in 5 minutes`,
+        openURL: `alook://www.torn.com/loader2.php?sid=getInAttack&user2ID=${id}`,
       }, new Date(date.getTime() - 5 * 60 * 1000))
     }
 
