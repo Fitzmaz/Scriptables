@@ -8,6 +8,8 @@
 // https://github.com/im3x/Scriptables
 // 
 
+const storage = require('./storage')
+
 const RUNTIME_VERSION = 20210708
 console.log(`Runtime Version: ${RUNTIME_VERSION}`)
 
@@ -43,7 +45,7 @@ class Base {
     // this.BACKGROUND_KEY1 = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY1}.jpg`)
     // this.BACKGROUND_KEY2 = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY2}.jpg`)
     // // 插件设置
-    this.settings = this.getSettings()
+    this.settings = this.loadSettings()
   }
 
   /**
@@ -622,41 +624,29 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
   }
   
   /**
-   * 获取当前插件的设置
-   * @param {Boolean} json 是否为json格式
+   * 加载当前插件的偏好设置
    */
-  getSettings(json=true){
-    let res=json?{}:""
-    let cache=""
-    // if (global && Keychain.contains(this.SETTING_KEY2)) {
-    //   cache = Keychain.get(this.SETTING_KEY2)
-    // } else if (Keychain.contains(this.SETTING_KEY)) {
-    //   cache = Keychain.get(this.SETTING_KEY)
-    // } else if (Keychain.contains(this.SETTING_KEY1)) {
-    //   cache = Keychain.get(this.SETTING_KEY1)
-    // } else if (Keychain.contains(this.SETTING_KEY2)){
-    if (Keychain.contains(this.SETTING_KEY)) {
-      cache= Keychain.get(this.SETTING_KEY)
+  loadSettings() {
+    let savedSettings = Object.assign({}, storage.getJSON(this.SETTING_KEY))
+    let settings = Object.assign({}, this.defaultSettings())
+    for (const key of Object.keys(settings)) {
+      if (!(key in savedSettings)) continue
+      settings[key] = savedSettings[key]
     }
-      if (json){
-        try {
-          res=JSON.parse(cache)
-        } catch (e) {}
-      }else{
-        res=cache
-      }
-    
-    return res
+    console.log(`load settings: ${JSON.stringify(settings)}`)
+    return settings
   }
 
   /**
-   * 存储当前设置
-   * @param {Boolean} notify 是否通知提示
+   * 保存当前插件的偏好设置
    */
-  saveSettings(notify=true){
-    let res= (typeof this.settings==="object")?JSON.stringify(this.settings):String(this.settings)
-    Keychain.set(this.SETTING_KEY, res)
-    if (notify) this.notify("设置成功","桌面组件稍后将自动刷新")
+  saveSettings(settings) {
+    console.log(`save settings: ${JSON.stringify(settings)}`)
+    storage.setJSON(this.SETTING_KEY, settings)
+  }
+
+  defaultSettings() {
+    // override
   }
 
   /**
@@ -801,7 +791,7 @@ const makeCopyAction = (M) => async () => {
   await M.notify("复制成功", "当前脚本的源代码已复制到剪贴板！")
 }
 
-const updateAction = (M) => async () => {
+const makeUpdateAction = (M) => async () => {
   const adapter = (encoding) => async (url) => {
     const req = new Request(url)
     req.timeoutInterval = 5
@@ -856,6 +846,16 @@ const updateAction = (M) => async () => {
   M.FILE_MGR.write(M.FILE_MGR.joinPath(M.FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
 }
 
+const makeSettingsAction = (M) => async () => {
+  let w = new WebView()
+  await w.loadURL('https://fce295ndf.lightyy.com/#/settings')
+  let settings = M.loadSettings()
+  await w.evaluateJavaScript(`window.importSettings(${JSON.stringify(settings)})`)
+  await w.present()
+  const result = await w.evaluateJavaScript('window.exportSettings()')
+  M.saveSettings(result)
+}
+
 // 运行环境
 const makeExec = (debug) => async (Widget, default_args = "") => {
   let M = null
@@ -877,10 +877,12 @@ const makeExec = (debug) => async (Widget, default_args = "") => {
       if (debug) {
         _actions.push(
           makePreviewAction(M),
-          makeCopyAction(M)
+          makeCopyAction(M),
+          makeSettingsAction(M),
         )
       } else {
-        _actions.push(updateAction(M))
+        _actions.push(makeUpdateAction(M))
+        _actions.push(makeSettingsAction(M))
       }
       const alert = new Alert()
       alert.title = `${M.name.toUpperCase()} 小组件`
@@ -888,8 +890,10 @@ const makeExec = (debug) => async (Widget, default_args = "") => {
       if (debug) {
         alert.addAction("预览组件")
         alert.addAction("复制源码")
+        alert.addAction("偏好设置")
       } else {
         alert.addAction("检查更新")
+        alert.addAction("偏好设置")
       }
       for (let _ in actions) {
         alert.addAction(_)
