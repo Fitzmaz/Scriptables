@@ -71,6 +71,18 @@ const NerveColor = '#b3382c'
 const tokenBGColor = Color.dynamic(new Color('#ececec', 0.5), new Color('#333333', 0.5))
 const tokenCornerRadius = 8
 
+// Settings
+const SettingsKeyNotificationTravel = 'notification.travel'
+const SettingsKeyNotificationDrug = 'notification.drug'
+const SettingsKeyNotificationBooster = 'notification.booster'
+const SettingsKeyNotificationMedical = 'notification.medical'
+const SettingsKeyNotificationNPCLoot = 'notification.npcloot'
+const SettingsKeyNPCLootDUKE = 'npcloot.duke'
+const SettingsKeyNPCLootLeslie = 'npcloot.leslie'
+const SettingsKeyNPCLootJimmy = 'npcloot.jimmy'
+const SettingsKeyNPCLootFernando = 'npcloot.fernando'
+const SettingsKeyNPCLootTiny = 'npcloot.tiny'
+
 // utils
 function addLeadingZeros(number, n = 2) {
   let string = String(number)
@@ -221,6 +233,21 @@ class Widget extends Base {
     this.version = '0.1.12'
     this.desc = `版本 ${this.version}`
     this.track('run')
+  }
+
+  defaultSettings() {
+    return {
+      [SettingsKeyNotificationTravel]: true,
+      [SettingsKeyNotificationDrug]: true,
+      [SettingsKeyNotificationBooster]: true,
+      [SettingsKeyNotificationMedical]: true,
+      [SettingsKeyNotificationNPCLoot]: true,
+      [SettingsKeyNPCLootDUKE]: true,
+      [SettingsKeyNPCLootLeslie]: true,
+      [SettingsKeyNPCLootJimmy]: false,
+      [SettingsKeyNPCLootFernando]: true,
+      [SettingsKeyNPCLootTiny]: true,
+    }
   }
 
   track(action, uid) {
@@ -434,19 +461,27 @@ class Widget extends Base {
       },
     }
     let countdownOptions = []
-    for (const id of ["4", "15", "20", "21"]) {
+    for (const id in NPC) {
+      const identifier = `torn.npc.${id}`
+      if (!this.settings[SettingsKeyNotificationNPCLoot]) {
+        await Notification.removePending([identifier])
+      }
+      // format of settings key: npcloot.<name>
+      if (!this.settings[`npcloot.${NPC[id].name.toLowerCase()}`]) continue
       if (!loot || !loot.hosp_out || !loot.hosp_out[id]) continue
       // level 4
       const date = new Date((loot.hosp_out[id] + 210 * 60) * 1000)
       const glyph = NPC[id].glyph
       countdownOptions.push(new CountdownOption(date, null, glyph))
-      //
-      await scheduleNotification({
-        identifier: `torn.npc.${id}`,
-        title: 'Torn NPC',
-        body: `Loot ${NPC[id].name} in 5 minutes`,
-        openURL: `alook://www.torn.com/loader2.php?sid=getInAttack&user2ID=${id}`,
-      }, new Date(date.getTime() - 5 * 60 * 1000))
+      // setup notification
+      if (this.settings[SettingsKeyNotificationNPCLoot]) {
+        await scheduleNotification({
+          identifier,
+          title: 'Torn NPC',
+          body: `Loot ${NPC[id].name} in 5 minutes`,
+          openURL: `alook://www.torn.com/loader2.php?sid=getInAttack&user2ID=${id}`,
+        }, new Date(date.getTime() - 5 * 60 * 1000))
+      }
     }
 
     let topContainer = addContainerV(right, wBlockEdgeLength)
@@ -690,11 +725,16 @@ class Widget extends Base {
       let travelDate = formatCooldown(timestamp, time_left)
       result[DataKeyTravel] = travelDate
       // setup notification
-      await scheduleNotification({
-        identifier: 'torn.travel',
-        title: 'Torn Travel',
-        body: `Arriving at ${destination}`
-      }, new Date(travelDate.getTime() - 15 * 1000))
+      const identifier = 'torn.travel'
+      if (this.settings[SettingsKeyNotificationTravel]) {
+        await scheduleNotification({
+          identifier,
+          title: 'Torn Travel',
+          body: `Arriving at ${destination}`
+        }, new Date(travelDate.getTime() - 15 * 1000))
+      } else {
+        await Notification.removePending([identifier])
+      }
     }
     // cooldowns
     const keys = [DataKeyDrug, DataKeyBooster, DataKeyMedical]
@@ -703,16 +743,18 @@ class Widget extends Base {
       if (cooldowns[key] === 0) continue
       let cooldownDate = formatCooldown(timestamp, cooldowns[key])
       result[key] = cooldownDate
-      // medical不通知
-      if (key === DataKeyMedical) {
-        continue
-      }
       // setup notification
-      await scheduleNotification({
-        identifier: `torn.cooldowns.${key}`,
-        title: 'Torn Cooldowns',
-        body: `Here is your ${key} cooldown reminder!`
-      }, cooldownDate)
+      const identifier = `torn.cooldowns.${key}`
+      // format of settings key: notification.<key>
+      if (this.settings[`notification.${key}`]) {
+        await scheduleNotification({
+          identifier: `torn.cooldowns.${key}`,
+          title: 'Torn Cooldowns',
+          body: `Here is your ${key} cooldown reminder!`
+        }, cooldownDate)
+      } else {
+        await Notification.removePending([identifier])
+      }
     }
     // bank
     if (city_bank && typeof city_bank.time_left !== 'undefined') {
