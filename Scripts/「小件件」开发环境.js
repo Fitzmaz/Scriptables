@@ -823,7 +823,6 @@ const makeUpdateAction = (M) => async () => {
 
   let name = M.name
   let encodedName = encodeURIComponent(name)
-  const fileName = `${name}.js`
   console.log('开始检查更新')
   let manifestURL = `https://gitee.com/Fitzmaz/Scriptables/raw/v2-dev/Dist/${encodedName}/manifest.json?_=${Date.now()}`
   const manifest = await get(manifestURL, 'json').catch((err) => { console.error(`检查更新发生错误: ${err}`) })
@@ -843,7 +842,7 @@ const makeUpdateAction = (M) => async () => {
   const REMOTE_RES = await get(downloadURL).catch((err) => { console.error(`下载更新发生错误: ${err}`) })
   if (!REMOTE_RES) return
   console.log('开始写入更新')
-  M.FILE_MGR.write(M.FILE_MGR.joinPath(M.FILE_MGR.documentsDirectory(), fileName), REMOTE_RES)
+  M.FILE_MGR.write(M.FILE_MGR.joinPath(M.FILE_MGR.documentsDirectory(), `${Script.name()}.js`), REMOTE_RES)
 }
 
 const makeSettingsAction = (M) => async () => {
