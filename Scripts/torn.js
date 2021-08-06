@@ -230,7 +230,7 @@ class Widget extends Base {
   constructor(arg) {
     super(arg)
     this.name = 'torn'
-    this.version = '0.1.14'
+    this.version = '0.1.15'
     this.desc = `版本 ${this.version}`
     this.track('run')
   }
