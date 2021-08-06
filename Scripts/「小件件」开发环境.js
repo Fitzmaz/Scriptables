@@ -847,7 +847,7 @@ const makeUpdateAction = (M) => async () => {
 
 const makeSettingsAction = (M) => async () => {
   let w = new WebView()
-  await w.loadURL('https://fce295ndf.lightyy.com/#/settings')
+  await w.loadURL(`https://fce295ndf.lightyy.com/#/settings?t=${Date.now()}`)
   let settings = M.loadSettings()
   await w.evaluateJavaScript(`window.importSettings(${JSON.stringify(settings)})`)
   await w.present()
